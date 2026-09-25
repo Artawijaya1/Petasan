@@ -1,6 +1,6 @@
 import asyncio
 
-async def run_command(command: str, websocket_send_fn):
+async def run_command(command: str, websocket_send_fn, cwd: str | None = None):
     """
     Menjalankan perintah terminal secara asynchronous
     dan memancarkan log-nya ke WebSocket secara real-time.
@@ -14,6 +14,7 @@ async def run_command(command: str, websocket_send_fn):
     # Jalankan perintah di shell
     process = await asyncio.create_subprocess_shell(
         command,
+        cwd=cwd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
