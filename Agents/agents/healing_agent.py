@@ -1,47 +1,74 @@
-import os
+# healing_agent.py
+from __future__ import annotations
+
 import json
-from openai import OpenAI
+import logging
+import os
 
-# Bob inference API — OpenAI-compatible endpoint
-# Gunakan Inference API key dari bob.ibm.com (scope: Inference)
-# Set env var: BOB_API_KEY dan BOB_BASE_URL
-client = OpenAI(
+from openai import AsyncOpenAI, APIError, APIConnectionError, APITimeoutError
+
+logger = logging.getLogger("healing_agent")
+
+client = AsyncOpenAI(
     api_key=os.environ.get("BOB_API_KEY"),
-    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
+    base_url=os.environ.get("BOB_BASE_URL", "https://api-hackathon-ibm.com/v1"),
+    timeout=20.0,
+    max_retries=2,
 )
+BOB_MODEL = os.environ.get("BOB_MODEL", "bob")
 
-def diagnose_and_fix(command_failed: str, stderr_log: str, attempt: int) -> dict:
-    system_prompt = """
-    Kamu adalah Auto-Healing DevOps Agent.
-    Tugasmu adalah menganalisis error log terminal dan memberikan perbaikan spesifik.
-    
-    Tugasmu:
-    1. Berikan alasan kenapa error terjadi (Thought Process).
-    2. Berikan 1 perintah perbaikan terminal yang tepat untuk dicoba ulang.
+SYSTEM_PROMPT = """Kamu adalah Auto-Healing DevOps Agent.
+Tugasmu adalah menganalisis error log terminal dan memberikan perbaikan spesifik.
 
-    Format JSON Response:
-    {
-      "thought_title": "Judul Singkat Masalah",
-      "thought_detail": "Penjelasan mendalam penyebab error...",
-      "fix_command": "perintah perbaikan terminal baru"
-    }
-    """
+Tugasmu:
+1. Berikan alasan kenapa error terjadi (Thought Process).
+2. Berikan 1 perintah perbaikan terminal yang tepat untuk dicoba ulang.
 
-    user_prompt = f"""
-    Perintah yang gagal: {command_failed}
-    Error Log (stderr):
-    {stderr_log[-1500:]}
+Format JSON Response:
+{
+  "thought_title": "Judul Singkat Masalah",
+  "thought_detail": "Penjelasan mendalam penyebab error...",
+  "fix_command": "perintah perbaikan terminal baru"
+}
+"""
 
-    Percobaan ke-{attempt}. Berikan diagnosis dan perintah perbaikan baru.
-    """
 
-    response = client.chat.completions.create(
-        model=os.environ.get("BOB_MODEL", "bob"),
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        response_format={"type": "json_object"}
-    )
+async def diagnose_and_fix(command_failed: str, stderr_log: str, attempt: int) -> dict | None:
+    trimmed_log = stderr_log[-1500:]
+    user_prompt = f"""Perintah yang gagal: {command_failed}
+Error Log (stderr):
+{trimmed_log}
 
-    return json.loads(response.choices[0].message.content)
+Percobaan ke-{attempt}. Berikan diagnosis dan perintah perbaikan baru.
+"""
+
+    try:
+        response = await client.chat.completions.create(
+            model=BOB_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+    except (APITimeoutError, APIConnectionError, APIError) as exc:
+        logger.error("Bob API error saat healing (attempt %s): %s", attempt, exc)
+        return None
+
+    raw = response.choices[0].message.content
+    if not raw:
+        logger.error("Bob mengembalikan konten kosong saat healing.")
+        return None
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error("Respons healing bukan JSON valid: %s", raw[:500])
+        return None
+
+    if not isinstance(parsed.get("fix_command"), str) or not parsed["fix_command"].strip():
+        logger.error("Respons healing tidak memiliki 'fix_command' yang valid.")
+        return None
+
+    return parsed
