@@ -31,7 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
                 # 2. Parsing Konfigurasi
-                plan = scan_repository(repo_path)
+                plan = await scan_repository(repo_path)
                 
                 # Buat .env jika diperlukan
                 if plan.get("env_needed") and os.path.exists(os.path.join(repo_path, ".env.example")):
@@ -59,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         if result["exit_code"] == 0:
                             # Sukses
-                            break
+                            return
                         else:
                             # Error Terjadi! Trigger Auto-Healing
                             await emit({
@@ -70,7 +70,15 @@ async def websocket_endpoint(websocket: WebSocket):
                             })
 
                             # Dapatkan saran perbaikan dari LLM
-                            healing_res = diagnose_and_fix(current_cmd, result["stderr"], attempt)
+                            healing_res = await diagnose_and_fix(current_cmd, result["stderr"], attempt)
+                            if not isinstance(healing_res, dict):
+                                await emit({
+                                    "type": "agent_thought",
+                                    "title": "Auto-Healing gagal",
+                                    "content": "Agent tidak dapat menghasilkan perintah perbaikan.",
+                                    "status": "failed"
+                                })
+                                break
 
                             await emit({
                                 "type": "agent_thought",

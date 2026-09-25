@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -85,7 +84,7 @@ async def _run_agent(
         "status": "in_progress",
     })
 
-    plan = await asyncio.to_thread(scan_repository, str(repo_path))
+    plan = await scan_repository(str(repo_path))
     if not isinstance(plan, dict):
         raise ValueError("Rencana agent dari parser bukan objek JSON.")
 
@@ -126,8 +125,7 @@ async def _run_agent(
                 "content": "Error terdeteksi. Mengirim stderr log ke Auto-Healing Agent...",
                 "status": "in_progress",
             })
-            healing_result = await asyncio.to_thread(
-                diagnose_and_fix,
+            healing_result = await diagnose_and_fix(
                 current_command,
                 result["stderr"],
                 attempt,
