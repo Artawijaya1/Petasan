@@ -90,20 +90,21 @@ async def websocket_endpoint(websocket: WebSocket):
                     "content": "Semua dependensi terpasang dan layanan berhasil dijalankan.",
                     "status": "completed"
                 })
-            is_healthy = await check_health(
-                target_url="http://localhost:3000",  # Sesuaikan port aplikasi target
-                max_retries=10, 
-                delay_seconds=2, 
-                websocket_send_fn=emit
-            )
 
-            # 5. Beri sinyal akhir ke Dashboard Web
-            await emit({
-                "type": "agent_thought",
-                "title": "SYSTEM READY FOR DEMO!",
-                "content": "Environment siap digunakan tanpa kesalahan.",
-                "status": "completed"
-            })
+                is_healthy = await check_health(
+                    target_url="http://localhost:3000",  # Sesuaikan port aplikasi target
+                    max_retries=10,
+                    delay_seconds=2,
+                    websocket_send_fn=emit
+                )
+
+                # 5. Beri sinyal akhir ke Dashboard Web
+                await emit({
+                    "type": "agent_thought",
+                    "title": "SYSTEM READY FOR DEMO!",
+                    "content": "Environment siap digunakan tanpa kesalahan.",
+                    "status": "completed"
+                })
             
     except WebSocketDisconnect:
      print("Client disconnected")

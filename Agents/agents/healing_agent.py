@@ -1,7 +1,14 @@
-from openai import OpenAI
+import os
 import json
+from openai import OpenAI
 
-client = OpenAI()
+# Bob inference API — OpenAI-compatible endpoint
+# Gunakan Inference API key dari bob.ibm.com (scope: Inference)
+# Set env var: BOB_API_KEY dan BOB_BASE_URL
+client = OpenAI(
+    api_key=os.environ.get("BOB_API_KEY"),
+    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
+)
 
 def diagnose_and_fix(command_failed: str, stderr_log: str, attempt: int) -> dict:
     system_prompt = """
@@ -23,13 +30,13 @@ def diagnose_and_fix(command_failed: str, stderr_log: str, attempt: int) -> dict
     user_prompt = f"""
     Perintah yang gagal: {command_failed}
     Error Log (stderr):
-    {stderr_log[-1500:]}  # Ambil bagian akhir log
+    {stderr_log[-1500:]}
 
     Percobaan ke-{attempt}. Berikan diagnosis dan perintah perbaikan baru.
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=os.environ.get("BOB_MODEL", "bob"),
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}

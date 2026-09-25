@@ -1,8 +1,14 @@
 import os
 import json
-from openai import OpenAI  # Atau SDK IBM Bob / LiteLLM yang Kamu Gunakan
+from openai import OpenAI
 
-client = OpenAI()
+# Bob inference API — OpenAI-compatible endpoint
+# Gunakan Inference API key dari bob.ibm.com (scope: Inference)
+# Set env var: BOB_API_KEY dan BOB_BASE_URL
+client = OpenAI(
+    api_key=os.environ.get("BOB_API_KEY"),
+    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
+)
 
 def scan_repository(repo_path: str) -> dict:
     files_to_check = ['package.json', 'requirements.txt', 'Dockerfile', 'docker-compose.yml', '.env.example', 'README.md']
@@ -33,7 +39,7 @@ def scan_repository(repo_path: str) -> dict:
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini", # Atau model pilihanmu
+        model=os.environ.get("BOB_MODEL", "bob"),
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )
