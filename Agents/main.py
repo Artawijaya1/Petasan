@@ -15,10 +15,10 @@ from pydantic import BaseModel, Field
 AGENTS_DIRECTORY = Path(__file__).resolve().parent
 load_dotenv(AGENTS_DIRECTORY / ".env")
 
-if not os.environ.get("BOB_API_KEY"):
+if not os.environ.get("GEMINI_API_KEY"):
     raise RuntimeError(
-        f"BOB_API_KEY tidak ditemukan. Isi {AGENTS_DIRECTORY / '.env'} "
-        "atau set environment variable BOB_API_KEY."
+        f"GEMINI_API_KEY tidak ditemukan. Isi {AGENTS_DIRECTORY / '.env'} "
+        "atau set environment variable GEMINI_API_KEY."
     )
 
 if str(AGENTS_DIRECTORY) not in sys.path:

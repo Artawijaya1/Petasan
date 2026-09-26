@@ -6,21 +6,13 @@ import json
 import logging
 import os
 
-from openai import AsyncOpenAI, APIError, APIConnectionError, APITimeoutError
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger("parser_agent")
 
-# Bob inference API — OpenAI-compatible endpoint
-# Gunakan Inference API key dari bob.ibm.com (scope: Inference)
-# Set env var: BOB_API_KEY dan BOB_BASE_URL
-client = AsyncOpenAI(
-    api_key=os.environ.get("BOB_API_KEY"),
-    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
-    timeout=20.0,
-    max_retries=2,
-)
-
-BOB_MODEL = os.environ.get("BOB_MODEL", "bob")
+_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
 
 async def scan_repository(repo_path: str) -> dict:
@@ -34,7 +26,6 @@ async def scan_repository(repo_path: str) -> dict:
             if os.path.exists(full_path):
                 try:
                     with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        # Ambil 2000 karakter pertama agar token efisien
                         result[file_name] = f.read(2000)
                 except OSError as exc:
                     logger.warning("Gagal membaca %s: %s", full_path, exc)
@@ -61,24 +52,28 @@ async def create_installation_plan(found_files: dict[str, str]) -> dict:
         "npm run dev"
       ]
     }}
+
+    Balas HANYA dengan JSON valid, tanpa teks tambahan apapun.
     """
 
     try:
-        response = await client.chat.completions.create(
-            model=BOB_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
         )
-    except (APITimeoutError, APIConnectionError, APIError) as exc:
-        logger.error("Bob API error saat parsing repository: %s", exc)
-        raise RuntimeError(f"Gagal menghubungi Bob API: {exc}") from exc
+    except Exception as exc:
+        logger.error("Gemini API error saat parsing repository: %s", exc)
+        raise RuntimeError(f"Gagal menghubungi Gemini API: {exc}") from exc
 
-    raw_content = response.choices[0].message.content
+    raw_content = response.text
     if not raw_content:
-        raise RuntimeError("Bob API mengembalikan konten kosong.")
+        raise RuntimeError("Gemini API mengembalikan konten kosong.")
 
     try:
         return json.loads(raw_content)
     except json.JSONDecodeError as exc:
-        logger.error("Respons Bob bukan JSON valid: %s", raw_content[:500])
-        raise RuntimeError("Bob API tidak mengembalikan JSON yang valid.") from exc
+        logger.error("Respons Gemini bukan JSON valid: %s", raw_content[:500])
+        raise RuntimeError("Gemini API tidak mengembalikan JSON yang valid.") from exc

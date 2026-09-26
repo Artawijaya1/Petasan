@@ -5,18 +5,14 @@ import json
 import logging
 import os
 
-from openai import AsyncOpenAI, APIError, APIConnectionError, APITimeoutError
+from google import genai
+from google.genai import types
 from rag.vector_store import vector_store
 
 logger = logging.getLogger("healing_agent")
 
-client = AsyncOpenAI(
-    api_key=os.environ.get("BOB_API_KEY"),
-    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
-    timeout=20.0,
-    max_retries=2,
-)
-BOB_MODEL = os.environ.get("BOB_MODEL", "bob")
+_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
 SYSTEM_PROMPT = """Kamu adalah Auto-Healing DevOps Agent.
 Tugasmu adalah menganalisis error log terminal dan memberikan perbaikan spesifik.
@@ -56,25 +52,26 @@ Referensi knowledge base (gunakan sebagai konteks, bukan jawaban pasti):
 {knowledge_context}
 
 Percobaan ke-{attempt}. Berikan diagnosis dan perintah perbaikan baru.
+Balas HANYA dengan JSON, tanpa teks tambahan apapun.
 """
 
     try:
-        response = await client.chat.completions.create(
-            model=BOB_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0,
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                response_mime_type="application/json",
+                temperature=0,
+            ),
         )
-    except (APITimeoutError, APIConnectionError, APIError) as exc:
-        logger.error("Bob API error saat healing (attempt %s): %s", attempt, exc)
+    except Exception as exc:
+        logger.error("Gemini API error saat healing (attempt %s): %s", attempt, exc)
         return None
 
-    raw = response.choices[0].message.content
+    raw = response.text
     if not raw:
-        logger.error("Bob mengembalikan konten kosong saat healing.")
+        logger.error("Gemini mengembalikan konten kosong saat healing.")
         return None
 
     try:
