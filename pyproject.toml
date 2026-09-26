@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+minversion = "7.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["Agents", "Backend"]
+omit = ["*/__pycache__/*", "*/.venv/*", "*/tests/*"]
