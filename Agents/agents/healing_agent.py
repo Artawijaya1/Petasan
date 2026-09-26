@@ -6,6 +6,7 @@ import logging
 import os
 
 from openai import AsyncOpenAI, APIError, APIConnectionError, APITimeoutError
+from rag.vector_store import vector_store
 
 logger = logging.getLogger("healing_agent")
 
@@ -35,9 +36,24 @@ Format JSON Response:
 
 async def diagnose_and_fix(command_failed: str, stderr_log: str, attempt: int) -> dict | None:
     trimmed_log = stderr_log[-1500:]
+    try:
+        await vector_store.build_index()
+        knowledge = await vector_store.retrieve(trimmed_log, top_k=3)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("RAG tidak tersedia saat healing: %s", exc)
+        knowledge = []
+
+    knowledge_context = "\n".join(
+        f"- {entry['text']} Saran yang pernah berhasil: {entry['known_fix']}"
+        for entry in knowledge
+    ) or "Tidak ada referensi knowledge base yang cukup relevan."
+
     user_prompt = f"""Perintah yang gagal: {command_failed}
 Error Log (stderr):
 {trimmed_log}
+
+Referensi knowledge base (gunakan sebagai konteks, bukan jawaban pasti):
+{knowledge_context}
 
 Percobaan ke-{attempt}. Berikan diagnosis dan perintah perbaikan baru.
 """
