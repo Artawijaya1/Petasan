@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv() #Update disini
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
