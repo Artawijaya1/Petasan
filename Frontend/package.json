@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test:stack": "node scripts/test-stack.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

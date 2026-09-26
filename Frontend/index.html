@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="petasan-backend-url" content="__PETASAN_BACKEND_URL__">
 
     <title>BOB 2.0 — Zero-Touch Provisioner</title>
 
@@ -849,14 +850,14 @@
 
                     <span
                         id="agent-dot"
-                        class="w-2 h-2 rounded-full bg-green-500"
+                        class="w-2 h-2 rounded-full bg-slate-600"
                     ></span>
 
                     <span
                         id="agent-status"
-                        class="text-xs font-medium text-green-400"
+                        class="text-xs font-medium text-slate-400"
                     >
-                        AGENT ONLINE
+                        BACKEND IDLE
                     </span>
 
                 </div>
@@ -940,13 +941,19 @@
                         Project
                     </div>
 
-                    <div class="font-semibold text-sm">
-                        hackathon-app
-                    </div>
-
-                    <div class="text-xs text-slate-500 mt-1 font-mono">
-                        ~/projects/
-                    </div>
+                    <label for="repo-path" class="block text-xs text-slate-400 mb-2">
+                        Path absolut proyek di host backend
+                    </label>
+                    <input
+                        id="repo-path"
+                        type="text"
+                        placeholder="D:\\Projects\\my-app"
+                        autocomplete="off"
+                        class="w-full rounded-md border border-border bg-panel2 px-2 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:border-blue-400 focus:outline-none"
+                    >
+                    <p class="mt-2 text-[10px] leading-relaxed text-slate-500">
+                        Folder harus sudah ada dan dapat diakses oleh proses Backend.
+                    </p>
 
                 </div>
 
@@ -1822,6 +1829,12 @@
 
     const startBtn = document.getElementById("start-btn");
     const resetBtn = document.getElementById("reset-btn");
+    const repoPathInput = document.getElementById("repo-path");
+    const backendUrlValue = document.querySelector('meta[name="petasan-backend-url"]')?.content.trim();
+    const backendBaseUrl = backendUrlValue && !backendUrlValue.startsWith("%")
+        ? backendUrlValue
+        : window.location.origin;
+    let activeSocket = null;
 
     const terminalOutput = document.getElementById("terminal-output");
     const activityContainer = document.getElementById("activity-container");
@@ -2334,7 +2347,7 @@
                                         : "text-slate-200"
                         }
                     ">
-                        ${step.title}
+                        ${escapeHtml(step.title)}
                     </h3>
 
                     ${badge}
@@ -2342,7 +2355,7 @@
                 </div>
 
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                    ${step.description}
+                    ${escapeHtml(step.description)}
                 </p>
 
             </div>
@@ -2355,6 +2368,17 @@
         activityContainer.scrollTop =
             activityContainer.scrollHeight;
 
+    }
+
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[character]);
     }
 
 
@@ -2437,6 +2461,120 @@
 
         thinkingIndicator.classList.add("hidden");
 
+    }
+
+
+    function setFailedState(detail) {
+        agentDot.className = "w-2 h-2 rounded-full bg-red-500";
+        agentStatus.textContent = "AGENT ERROR";
+        agentStatus.className = "text-xs font-medium text-red-400";
+        statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+        systemStatus.textContent = "FAILED";
+        systemStatus.className = "font-semibold text-sm text-red-400";
+        statusDetail.textContent = detail || "Provisioning gagal";
+        terminalStatus.textContent = "FAILED";
+        terminalStatus.className = "text-[10px] uppercase tracking-widest text-red-400";
+        terminalLive.classList.add("hidden");
+        thinkingIndicator.classList.add("hidden");
+        finalStatus.textContent = "FAILED";
+        finalStatus.className = "text-xl font-bold text-red-400";
+        healthDot.className = "w-2 h-2 rounded-full bg-red-500";
+        healthText.textContent = "Unavailable";
+        healthText.className = "font-semibold text-sm text-red-400";
+        afterHealth.textContent = "Failed";
+        afterHealth.className = "text-red-400";
+    }
+
+
+    function finishAgent(success, detail) {
+        if (!isRunning) return;
+
+        isRunning = false;
+        if (success) {
+            setCompleteState();
+            finalStatus.textContent = "READY";
+            finalStatus.className = "text-xl font-bold text-green-400";
+            healthDot.className = "w-2 h-2 rounded-full bg-green-500";
+            healthText.textContent = "Healthy";
+            healthText.className = "font-semibold text-sm text-green-400";
+            afterService.textContent = "Running";
+            afterService.className = "text-green-400";
+            afterHealth.textContent = "Healthy";
+            afterHealth.className = "text-green-400";
+        } else {
+            setFailedState(detail);
+        }
+
+        startBtn.classList.add("hidden");
+        resetBtn.classList.remove("hidden");
+        if (activeSocket && activeSocket.readyState < WebSocket.CLOSING) {
+            activeSocket.close();
+        }
+        activeSocket = null;
+    }
+
+
+    function startAgent() {
+        if (isRunning) return;
+
+        const repoPath = repoPathInput.value.trim();
+        if (!repoPath) {
+            emptyState.classList.add("hidden");
+            addActivity({ type: "error", title: "Path proyek diperlukan", description: "Masukkan path absolut folder proyek yang sudah ada dan dapat diakses oleh host Backend." });
+            repoPathInput.focus();
+            return;
+        }
+
+        isRunning = true;
+        startBtn.disabled = true;
+        startBtn.classList.add("opacity-50", "cursor-not-allowed");
+        resetBtn.classList.add("hidden");
+        emptyState.classList.add("hidden");
+        activityContainer.innerHTML = "";
+        clearTerminal();
+        addTerminalLine("info", `Menghubungkan ke backend untuk ${repoPath}...`);
+        setRunningState();
+
+        const socketUrl = new URL("/ws/agent", backendBaseUrl);
+        socketUrl.protocol = socketUrl.protocol === "https:" ? "wss:" : "ws:";
+        activeSocket = new WebSocket(socketUrl);
+        activeSocket.onopen = () => {
+            addTerminalLine("success", "Koneksi backend tersambung.");
+            activeSocket.send(JSON.stringify({ action: "start", repo_path: repoPath }));
+        };
+        activeSocket.onmessage = event => {
+            let message;
+            try {
+                message = JSON.parse(event.data);
+            } catch {
+                addTerminalLine("error", "Backend mengirim pesan yang tidak valid.");
+                return;
+            }
+
+            if (message.type === "terminal_log") {
+                addTerminalLine(message.isError ? "error" : "info", message.content || "");
+            } else if (message.type === "agent_thought") {
+                const title = message.title || "Agent update";
+                const type = message.status === "failed"
+                    ? "error"
+                    : /heal|perbaikan/i.test(title)
+                        ? "heal"
+                        : message.status === "completed"
+                            ? "success"
+                            : "info";
+                addActivity({ type, title, description: message.content || "" });
+            } else if (message.type === "agent_error") {
+                addActivity({ type: "error", title: "Backend error", description: message.content || "Terjadi kesalahan." });
+            } else if (message.type === "agent_complete") {
+                finishAgent(message.status === "completed", message.content || "Provisioning selesai.");
+            }
+        };
+        activeSocket.onclose = () => {
+            if (isRunning) {
+                addActivity({ type: "error", title: "Koneksi backend terputus", description: "Proses berhenti sebelum backend mengirim status selesai." });
+                finishAgent(false, "Koneksi backend terputus");
+            }
+        };
     }
 
 
@@ -2841,6 +2979,12 @@
 
         thinkingIndicator.classList.add("hidden");
 
+        agentDot.className = "w-2 h-2 rounded-full bg-slate-600";
+        agentStatus.textContent = "BACKEND IDLE";
+        agentStatus.className = "text-xs font-medium text-slate-400";
+        startBtn.disabled = false;
+        activeSocket = null;
+
     }
 
 
@@ -2863,7 +3007,7 @@
 
     startBtn.addEventListener(
         "click",
-        runSimulation
+        startAgent
     );
 
     resetBtn.addEventListener(
