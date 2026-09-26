@@ -44,5 +44,5 @@ KNOWLEDGE_SEED: list[dict] = [
         "known_fix": "npm install && npm run build",
         "category": "missing_file",
     },
-    # Tambahkan lebih banyak seiring pengalaman tim...
+    
 ]
