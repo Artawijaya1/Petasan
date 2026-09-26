@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
         rel="stylesheet"
     >
 
@@ -20,20 +20,20 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ["Inter", "sans-serif"],
-                        mono: ["JetBrains Mono", "monospace"],
+                        sans: ["Geist", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+                        mono: ["Geist Mono", "JetBrains Mono", "monospace"],
                     },
 
                     colors: {
-                        bg: "#06080d",
-                        panel: "#0b0f16",
-                        panel2: "#0f141d",
-                        border: "#1c2533",
+                        bg: "#020408",
+                        panel: "#060911",
+                        panel2: "#0b101d",
+                        border: "#172033",
 
                         blue: {
-                            400: "#60a5fa",
-                            500: "#3b82f6",
-                            600: "#2563eb",
+                            400: "#38bdf8",
+                            500: "#0284c7",
+                            600: "#0369a1",
                         },
 
                         green: {
@@ -61,18 +61,23 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         html,
         body {
             margin: 0;
             width: 100%;
-            height: 100%;
+            min-height: 100%;
         }
 
         body {
-            background: #06080d;
+            background: #04060a;
             color: #f8fafc;
-            font-family: "Inter", sans-serif;
-            overflow: hidden;
+            font-family: "Plus Jakarta Sans", sans-serif;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* Scrollbar */
@@ -226,8 +231,174 @@
             animation: blink 1s infinite;
         }
 
-        /* Grid background */
+        /* ================================================================
+           LANDING PAGE STYLES (MINIMALIST & GLASSMORPHISM — 21ST.DEV / RECENT.DESIGN AESTHETIC)
+        ================================================================ */
 
+        #lp-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+
+        .lp-root {
+            background-color: #020408;
+            background-image: radial-gradient(circle at 50% -10%, rgba(14, 45, 82, 0.35) 0%, rgba(3, 7, 16, 0.8) 50%, #020408 100%);
+            color: #f4f4f5;
+            font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: -0.015em;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Glassmorphism Navigation */
+        .glass-nav {
+            background: rgba(2, 4, 8, 0.65);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Glass Surface (21st.dev style specular dark glass) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                0 24px 48px -12px rgba(0, 0, 0, 0.6);
+            border-radius: 16px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-panel:hover {
+            background: rgba(255, 255, 255, 0.035);
+            border-color: rgba(255, 255, 255, 0.14);
+            transform: translateY(-2px);
+        }
+
+        /* Glass Capsule Pill */
+        .glass-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.035);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            font-size: 12px;
+            font-weight: 500;
+            color: #d4d4d8;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        /* Minimalist Buttons */
+        .btn-pill-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #ffffff;
+            color: #09090b;
+            font-weight: 500;
+            font-size: 13.5px;
+            padding: 9px 20px;
+            border-radius: 9999px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .btn-pill-primary:hover {
+            background: #f4f4f5;
+            transform: translateY(-1px);
+        }
+        .btn-pill-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-pill-glass {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: #e4e4e7;
+            font-weight: 500;
+            font-size: 13.5px;
+            padding: 9px 20px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: all 0.15s ease;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        .btn-pill-glass:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+        }
+
+        /* Glass Terminal Window */
+        .glass-terminal {
+            background: rgba(6, 9, 17, 0.75);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 16px;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                0 30px 60px -15px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+        }
+
+        .glass-terminal-header {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Clean Step Chip */
+        .glass-step-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11.5px;
+            font-family: "Geist Mono", monospace;
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: #71717a;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .glass-step-chip.active {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.06);
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+        .glass-step-chip.passed {
+            color: #34d399;
+            background: rgba(52, 211, 153, 0.05);
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+
+        .terminal-log-view {
+            font-family: "Geist Mono", monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            color: #a1a1aa;
+        }
+
+        /* ================================================================ */
+
+        /* Grid background */
         .grid-bg {
             background-image:
                 linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
@@ -267,7 +438,353 @@
 
 <body>
 
-<div id="app" class="h-screen flex flex-col">
+<!-- ============================================================= -->
+<!-- LANDING PAGE VIEW (MINIMALIST & GLASSMORPHISM — 21ST.DEV & RECENT.DESIGN AESTHETIC) -->
+<!-- ============================================================= -->
+<div id="landing-view" class="lp-root relative min-h-screen">
+
+  <!-- Interactive WebGL Shader Canvas Backdrop -->
+  <canvas id="lp-canvas" class="fixed inset-0 pointer-events-none" aria-hidden="true"></canvas>
+
+  <!-- Top Navigation (Glassmorphic) -->
+  <header class="fixed top-0 left-0 right-0 z-50 h-16 flex items-center glass-nav">
+    <div class="max-w-7xl w-full mx-auto px-6 lg:px-10 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-md bg-white/[0.08] border border-white/[0.12] flex items-center justify-center">
+          <div class="w-2 h-2 rounded-sm bg-sky-400"></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-sm tracking-tight text-white">Petasan</span>
+          <span class="text-[11px] font-mono text-zinc-400 px-1.5 py-0.2 rounded border border-white/[0.08] bg-white/[0.02]">v2.0</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-7 text-xs font-medium text-zinc-400">
+        <a href="#capabilities" class="hover:text-white transition-colors">Kapabilitas</a>
+        <a href="#pipeline" class="hover:text-white transition-colors">Alur Kerja</a>
+        <a href="#architecture" class="hover:text-white transition-colors">Arsitektur</a>
+      </nav>
+
+      <button class="launch-app-btn btn-pill-primary text-xs !py-1.5 !px-3.5">
+        <span>Buka Dashboard</span>
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section: Asymmetric Minimalist Stage -->
+  <section class="relative z-10 pt-32 pb-24 px-6 lg:px-10 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+      
+      <!-- Left Column: Typography & Intent (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col items-start">
+        
+        <!-- Status Pill (21st.dev style) -->
+        <div class="glass-pill mb-6">
+          <span class="w-2 h-2 rounded-full bg-emerald-400/90 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
+          <span class="text-xs text-zinc-300">Engine DevOps Otonom</span>
+          <span class="text-zinc-600 font-mono text-[11px]">|</span>
+          <span class="text-zinc-400 font-mono text-[11px]">IBM Bob 2.0</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl lg:text-[4.1rem] font-medium tracking-[-0.035em] text-white leading-[1.08] mb-6">
+          Zero-touch provisioning<br>
+          <span class="text-zinc-400 font-normal">dengan auto-healing mandiri.</span>
+        </h1>
+
+        <p class="text-base sm:text-[17px] text-zinc-400 font-normal leading-relaxed max-w-lg mb-8">
+          Petasan memindai repositori Anda, mengorkestrasi eksekusi dependensi, dan mereparasi error runtime secara otonom menggunakan model kognitif IBM Bob dan memori vektor RAG.
+        </p>
+
+        <!-- Action Buttons (Minimalist Pill) -->
+        <div class="flex flex-wrap items-center gap-3.5 mb-12">
+          <button class="launch-app-btn btn-pill-primary">
+            <span>Buka Dashboard</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            </svg>
+          </button>
+          <a href="#pipeline" class="btn-pill-glass">
+            <span>Lihat Alur Kerja</span>
+          </a>
+        </div>
+
+        <!-- Telemetry Spec Bar (Clean Minimalist) -->
+        <div class="w-full pt-6 border-t border-white/[0.08] grid grid-cols-3 gap-6 text-xs">
+          <div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Model Inferensi</div>
+            <div class="text-zinc-200 font-medium">IBM Bob Inference</div>
+          </div>
+          <div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Memori Perbaikan</div>
+            <div class="text-zinc-200 font-medium">Vector RAG Store</div>
+          </div>
+          <div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Stream Log</div>
+            <div class="text-zinc-200 font-medium">FastAPI WebSocket</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Frosted Glass Terminal HUD (5 cols) -->
+      <div class="lg:col-span-5 w-full">
+        <div class="glass-terminal">
+          <!-- Glass Terminal Header -->
+          <div class="glass-terminal-header">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-white/[0.15]"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-white/[0.15]"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-white/[0.15]"></span>
+              </div>
+              <span class="font-mono text-xs text-zinc-300 ml-2">petasan-agent // telemetry</span>
+            </div>
+            <div class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Port :8000</span>
+            </div>
+          </div>
+
+          <!-- Glass Step Ribbon -->
+          <div class="p-3 border-b border-white/[0.06] bg-black/20 grid grid-cols-2 gap-2">
+            <div class="glass-step-chip passed" id="hud-stage-1">
+              <span>01</span>
+              <span>Parser Scan</span>
+            </div>
+            <div class="glass-step-chip passed" id="hud-stage-2">
+              <span>02</span>
+              <span>Plan Execution</span>
+            </div>
+            <div class="glass-step-chip active" id="hud-stage-3">
+              <span>03</span>
+              <span>RAG Healing</span>
+            </div>
+            <div class="glass-step-chip" id="hud-stage-4">
+              <span>04</span>
+              <span>Health Probe</span>
+            </div>
+          </div>
+
+          <!-- Terminal Code Log Feed -->
+          <div class="p-5 terminal-log-view min-h-[240px] flex flex-col justify-end bg-black/30">
+            <div id="lp-hud-log" class="space-y-1.5">
+              <div class="text-zinc-500">[00:00:01] Initializing repository discovery...</div>
+              <div class="text-sky-400">[00:00:02] Manifests found: package.json, requirements.txt</div>
+              <div class="text-zinc-300">[00:00:04] $ npm install --silent</div>
+              <div class="text-amber-300">[00:00:06] Stderr: EADDRINUSE 127.0.0.1:3000</div>
+              <div class="text-indigo-300 p-2.5 my-1 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05]">
+                <div class="text-[11px] text-zinc-400 mb-0.5">RAG Vector Match: "EADDRINUSE port conflict"</div>
+                <div class="text-indigo-200">Executing fix: npx kill-port 3000</div>
+              </div>
+              <div class="text-zinc-300">[00:00:08] $ npx kill-port 3000 &amp;&amp; npm run dev</div>
+              <div class="text-emerald-400 font-medium">[00:00:10] Ping http://localhost:3000 &rarr; HTTP 200 OK</div>
+            </div>
+          </div>
+
+          <!-- Glass Terminal Footer -->
+          <div class="px-5 py-3 border-t border-white/[0.06] bg-black/40 flex items-center justify-between font-mono text-[11px]">
+            <span class="text-zinc-400">Target: <span class="text-zinc-200">http://localhost:3000</span></span>
+            <span class="text-emerald-400 font-medium">Status: Ready</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Section: Kapabilitas Inti (Glass Bento Grid) -->
+    <section id="capabilities" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
+      <div class="max-w-xl mb-14">
+        <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Kapabilitas Inti</h2>
+        <p class="text-sm text-zinc-400 leading-relaxed">Tiga modul otonom yang bekerja bersama untuk menyediakan environment terverifikasi.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+        <!-- Card 1 -->
+        <div class="glass-panel p-8 flex flex-col justify-between min-h-[280px]">
+          <div>
+            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 mb-5">
+              Parser Agent
+            </div>
+            <h3 class="text-lg font-medium text-white mb-2">Deteksi Stack Otomatis</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Menganalisis file konfigurasi seperti package.json, Dockerfile, requirements.txt, dan template .env untuk menyusun urutan eksekusi instalasi tanpa intervensi manusia.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
+            <span>Discovery engine</span>
+            <span class="text-zinc-400">Zero-config</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="glass-panel p-8 flex flex-col justify-between min-h-[280px]">
+          <div>
+            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 mb-5">
+              RAG Kernel
+            </div>
+            <h3 class="text-lg font-medium text-white mb-2">Auto-Healing Kognitif</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Ketika eksekusi mengalami error runtime (exit code != 0), log stderr dicocokkan dengan vector store RAG dan model IBM Bob untuk mengeksekusi perbaikan otomatis hingga 3 kali percobaan.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
+            <span>Retri perbaikan</span>
+            <span class="text-zinc-400">3 kali maksimal</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="glass-panel p-8 flex flex-col justify-between min-h-[280px]">
+          <div>
+            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 mb-5">
+              Health Agent
+            </div>
+            <h3 class="text-lg font-medium text-white mb-2">Probe Verifikasi Layanan</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Memverifikasi ketersediaan aplikasi lokal secara non-blocking via HTTP ping berkala ke port target. Memastikan kode status HTTP 200 sebelum menyatakan kesiapan demo.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
+            <span>Probe aktif</span>
+            <span class="text-zinc-400">Cek HTTP 200</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section: Alur Eksekusi (Pipeline dengan konektor visual) -->
+    <section id="pipeline" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
+      <div class="max-w-xl mb-14">
+        <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Alur Eksekusi</h2>
+        <p class="text-sm text-zinc-400 leading-relaxed">Tiga tahapan sekuensial dari input repository hingga verifikasi layanan aktif.</p>
+      </div>
+
+      <!-- Pipeline dengan konektor horizontal -->
+      <div class="relative">
+        <!-- Konektor garis horizontal -->
+        <div class="hidden md:block absolute top-1/2 left-[calc(16.67%+80px)] right-[calc(16.67%+80px)] h-px bg-gradient-to-r from-white/[0.08] via-white/[0.15] to-white/[0.08]"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+      
+        <div class="glass-panel p-7 relative">
+          <div class="font-mono text-xs text-zinc-500 mb-3">01 // Discovery</div>
+          <h3 class="text-base font-medium text-white mb-2">Input Repository</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Masukkan path folder proyek lokal di konsol antarmuka. Parser langsung memetakan dependensi yang diperlukan.
+          </p>
+          <!-- Panah kanan -->
+          <div class="hidden md:block absolute right-[-24px] top-1/2 -translate-y-1/2 text-zinc-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="glass-panel p-7 relative">
+          <div class="font-mono text-xs text-zinc-500 mb-3">02 // Orchestration</div>
+          <h3 class="text-base font-medium text-white mb-2">Eksekusi Terawasi</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Backend menjalankan subprocess shell secara asinkron, streaming log ke WebSocket, dan memanggil Auto-Healing jika terjadi kegagalan.
+          </p>
+          <div class="hidden md:block absolute right-[-24px] top-1/2 -translate-y-1/2 text-zinc-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="glass-panel p-7 relative">
+          <div class="font-mono text-xs text-zinc-500 mb-3">03 // Verification</div>
+          <h3 class="text-base font-medium text-white mb-2">Sistem Terverifikasi</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Probe mendeteksi respons HTTP 200 dari port lokal. Sistem mengumumkan kesiapan penuh tanpa konfigurasi manual.
+          </p>
+        </div>
+
+      </div>
+      </div>
+    </section>
+
+  <!-- Section: Arsitektur Sistem -->
+    <section id="architecture" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
+      <div class="max-w-xl mb-14">
+        <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Arsitektur Sistem</h2>
+        <p class="text-sm text-zinc-400 leading-relaxed">Topologi microservice modular yang saling terhubung melalui REST dan WebSocket aman.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-panel p-7">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-sky-400 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20">:5173</span>
+            <span class="text-[11px] font-mono text-zinc-500">Client</span>
+          </div>
+          <h3 class="text-base font-medium text-white mb-2">Klien Frontend</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed mb-4">
+            Dashboard antarmuka pengguna real-time berbasis React dan Vite untuk memantau stream log dan status reasoning agent.
+          </p>
+          <div class="text-[11px] font-mono text-zinc-500">React + Tailwind</div>
+        </div>
+
+        <div class="glass-panel p-7">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">:8000</span>
+            <span class="text-[11px] font-mono text-zinc-500">Gateway</span>
+          </div>
+          <h3 class="text-base font-medium text-white mb-2">Orkestrator Backend</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed mb-4">
+            FastAPI Gateway yang mengeksekusi shell process lokal, menangani koneksi WebSocket, dan mengelola polling health check.
+          </p>
+          <div class="text-[11px] font-mono text-zinc-500">Python FastAPI + AsyncIO</div>
+        </div>
+
+        <div class="glass-panel p-7">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">:8001</span>
+            <span class="text-[11px] font-mono text-zinc-500">Kognitif</span>
+          </div>
+          <h3 class="text-base font-medium text-white mb-2">Agent Kognitif & RAG</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed mb-4">
+            Microservice inferensi cerdas yang ditenagai IBM Bob model dan vector store embedding untuk diagnosis otomatis.
+          </p>
+          <div class="text-[11px] font-mono text-zinc-500">IBM Bob API + Vector Store</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner Section -->
+    <section class="relative z-10 py-24 px-6 lg:px-10 max-w-5xl mx-auto text-center border-t border-white/[0.06]">
+      <div class="glass-panel p-12 sm:p-16 text-center relative overflow-hidden">
+        <h2 class="text-2xl sm:text-4xl font-medium tracking-tight text-white mb-4">
+          Siap menjalankan provisioning otomatis?
+        </h2>
+        <p class="text-zinc-400 text-sm sm:text-base max-w-md mx-auto mb-8 font-normal">
+          Buka konsol dashboard dan mulai eksekusi setup proyek Anda dalam hitungan detik.
+        </p>
+        <button class="launch-app-btn btn-pill-primary mx-auto">
+          <span>Buka Dashboard</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-white/[0.06] py-8 px-6 lg:px-10 text-center font-mono text-xs text-zinc-500">
+    PETASAN // IBM BOB 2.0 ZERO-TOUCH PROVISIONER
+  </footer>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- MAIN APPLICATION VIEW -->
+<!-- ============================================================= -->
+<div id="app-view" class="h-screen flex flex-col hidden">
 
     <!-- ========================================================= -->
     <!-- HEADER -->
@@ -344,6 +861,17 @@
 
                 </div>
 
+
+                <button
+                    id="back-to-landing-btn"
+                    class="h-10 px-3 rounded-lg border border-border bg-panel2 hover:bg-panel text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    title="Kembali ke Landing Page"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Landing Page</span>
+                </button>
 
                 <button
                     id="start-btn"
@@ -1027,6 +1555,270 @@
 <!-- ============================================================= -->
 
 <script>
+
+    // ponytail: SPA view toggle between landing and dashboard. Upgrade to router when multiple routes/history state needed.
+    const landingView = document.getElementById("landing-view");
+    const appView = document.getElementById("app-view");
+    const launchBtns = document.querySelectorAll(".launch-app-btn");
+    const backBtn = document.getElementById("back-to-landing-btn");
+
+    function showApp() {
+        if (landingView && appView) {
+            landingView.classList.add("hidden");
+            appView.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            if (window.lpShader) window.lpShader.pause();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function showLanding() {
+        if (landingView && appView) {
+            appView.classList.add("hidden");
+            landingView.classList.remove("hidden");
+            document.body.style.overflow = "auto";
+            if (window.lpShader) window.lpShader.resume();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    launchBtns.forEach(btn => btn.addEventListener("click", showApp));
+    if (backBtn) backBtn.addEventListener("click", showLanding);
+
+    // ============================================================
+    // INTERACTIVE WEBGL SHADER ENGINE (GLSL DOMAIN-WARP + RIPPLE)
+    // ============================================================
+
+    (function initWebGLShader() {
+        const canvas = document.getElementById("lp-canvas");
+        if (!canvas) return;
+
+        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        if (!gl) {
+            console.warn("WebGL not supported, falling back to static backdrop.");
+            return;
+        }
+
+        const vsSource = `
+            attribute vec2 a_pos;
+            void main() {
+                gl_Position = vec4(a_pos, 0.0, 1.0);
+            }
+        `;
+
+        // Smooth domain-warped FBM with mouse ripple distortion
+        const fsSource = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            // Simplex-inspired pseudo noise
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                                   -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1  = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+                      + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+
+            float fbm(vec2 p) {
+                float v = 0.0;
+                float a = 0.5;
+                mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+                for (int i = 0; i < 4; ++i) {
+                    v += a * snoise(p);
+                    p = rot * p * 2.0;
+                    a *= 0.5;
+                }
+                return v;
+            }
+
+            void main() {
+                vec2 st = gl_FragCoord.xy / u_resolution.xy;
+                st.x *= u_resolution.x / u_resolution.y;
+
+                vec2 m = u_mouse.xy / u_resolution.xy;
+                m.x *= u_resolution.x / u_resolution.y;
+
+                // Mouse ripple displacement
+                float dist = distance(st, m);
+                float ripple = sin(dist * 22.0 - u_time * 2.5) * exp(-dist * 4.5) * 0.06;
+
+                // Domain warping
+                vec2 q = vec2(
+                    fbm(st + vec2(0.0, 0.0) + u_time * 0.04 + ripple),
+                    fbm(st + vec2(5.2, 1.3) + u_time * 0.03 - ripple)
+                );
+
+                vec2 r = vec2(
+                    fbm(st + 4.0 * q + vec2(1.7, 9.2) + u_time * 0.06),
+                    fbm(st + 4.0 * q + vec2(8.3, 2.8) + u_time * 0.05)
+                );
+
+                float f = fbm(st + 3.0 * r);
+
+                // Deep architectural colors
+                vec3 colorBg = vec3(0.015, 0.023, 0.04); // #04060a deep obsidian
+                vec3 colorMid = vec3(0.03, 0.07, 0.14);   // #081224 midnight navy
+                vec3 colorHigh = vec3(0.04, 0.16, 0.22);  // #0a2938 deep teal
+                vec3 colorAccent = vec3(0.02, 0.35, 0.45);// subtle electric cyan pulse
+
+                vec3 col = mix(colorBg, colorMid, clamp(f * f * 2.5, 0.0, 1.0));
+                col = mix(col, colorHigh, clamp(length(q), 0.0, 1.0) * 0.7);
+                col = mix(col, colorAccent, clamp(length(r.x) * (1.0 - dist * 0.8), 0.0, 1.0) * 0.25);
+
+                // Edge vignette
+                vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+                float vig = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
+                col *= clamp(14.0 * vig, 0.0, 1.0);
+
+                gl_FragColor = vec4(col, 0.85);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        if (!vs || !fs) return;
+
+        const program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error("Program link error:", gl.getProgramInfoLog(program));
+            return;
+        }
+
+        gl.useProgram(program);
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,
+             1, -1,
+            -1,  1,
+            -1,  1,
+             1, -1,
+             1,  1,
+        ]), gl.STATIC_DRAW);
+
+        const posAttr = gl.getAttribLocation(program, "a_pos");
+        gl.enableVertexAttribArray(posAttr);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(program, "u_resolution");
+        const uMouse = gl.getUniformLocation(program, "u_mouse");
+        const uTime = gl.getUniformLocation(program, "u_time");
+
+        let mouse = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
+        let curMouse = { x: mouse.x, y: mouse.y };
+        let paused = false;
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        window.addEventListener("mousemove", (e) => {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            mouse.x = e.clientX * dpr;
+            mouse.y = (window.innerHeight - e.clientY) * dpr;
+        });
+
+        let startTime = performance.now();
+        function render() {
+            if (paused) return;
+
+            curMouse.x += (mouse.x - curMouse.x) * 0.05;
+            curMouse.y += (mouse.y - curMouse.y) * 0.05;
+
+            const t = (performance.now() - startTime) * 0.001;
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform2f(uMouse, curMouse.x, curMouse.y);
+            gl.uniform1f(uTime, t);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+
+        window.lpShader = {
+            pause: () => { paused = true; },
+            resume: () => {
+                if (paused) {
+                    paused = false;
+                    requestAnimationFrame(render);
+                }
+            }
+        };
+    })();
+
+    // ============================================================
+    // HUD TELEMETRY CYCLE SIMULATOR
+    // ============================================================
+
+    (function initHudSimulator() {
+        const stages = [
+            document.getElementById("hud-stage-1"),
+            document.getElementById("hud-stage-2"),
+            document.getElementById("hud-stage-3"),
+            document.getElementById("hud-stage-4")
+        ];
+        if (!stages[0]) return;
+
+        let currentActive = 2;
+        setInterval(() => {
+            stages.forEach((node, idx) => {
+                if (!node) return;
+                node.className = "lp-stage-node";
+                if (idx < currentActive) {
+                    node.classList.add("passed");
+                } else if (idx === currentActive) {
+                    node.classList.add("active");
+                }
+            });
+            currentActive = (currentActive + 1) % 4;
+        }, 3000);
+    })();
 
     const startBtn = document.getElementById("start-btn");
     const resetBtn = document.getElementById("reset-btn");
