@@ -59,13 +59,13 @@ Backend tersedia di `http://127.0.0.1:8000`, dokumentasi di `/docs`, dan Agents 
 - `POST /v1/scan` menerima `{ "files": { "package.json": "..." } }`.
 - `POST /v1/heal` menerima `command_failed`, `stderr_log`, dan `attempt`.
 
-Endpoint scan dan heal memerlukan header `Authorization: Bearer <AGENT_SERVICE_TOKEN>`. Backend meneruskan status agent ke klien melalui `ws://127.0.0.1:8000/ws/agent`; pesan start tetap memakai format:
+Endpoint scan dan heal memerlukan header `Authorization: Bearer <AGENT_SERVICE_TOKEN>`. Backend menerima URL repository GitHub melalui `ws://127.0.0.1:8000/ws/agent`, meng-clone repository ke direktori sementara, lalu menghapusnya setelah proses selesai. Git harus tersedia di host Backend. Repository privat memerlukan kredensial Git yang sudah dikonfigurasi di host; jangan kirim token lewat browser. Pesan start memakai format:
 
 ```json
 {
    "action": "start",
-   "repo_path": "C:\\path\\to\\project"
+   "repo_url": "https://github.com/owner/repository"
 }
 ```
 
-`repo_path` harus tersedia di host Backend karena Backend yang membaca berkas dan menjalankan perintah proyek.
+URL harus menunjuk ke repository di `github.com` melalui HTTPS. Backend membaca berkas dan menjalankan perintah proyek hasil clone di workspace sementara.

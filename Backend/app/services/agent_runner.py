@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
@@ -31,6 +32,25 @@ def _read_repository_files(repo_path: Path) -> dict[str, str]:
     return files
 
 
+def _run_shell_command(command: str, cwd: str) -> dict[str, Any]:
+    process = subprocess.run(
+        command,
+        cwd=cwd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    return {
+        "exit_code": process.returncode,
+        "stdout": process.stdout,
+        "stderr": process.stderr,
+    }
+
+
 async def _run_command(
     command: str,
     emit: Callable[[dict[str, Any]], Awaitable[None]],
@@ -42,22 +62,16 @@ async def _run_command(
         "isError": False,
     })
 
-    process = await asyncio.create_subprocess_shell(
-        command,
-        cwd=cwd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout_bytes, stderr_bytes = await process.communicate()
-    stdout = stdout_bytes.decode("utf-8", errors="replace")
-    stderr = stderr_bytes.decode("utf-8", errors="replace")
+    result = await asyncio.to_thread(_run_shell_command, command, cwd)
+    stdout = result["stdout"]
+    stderr = result["stderr"]
 
     if stdout:
         await emit({"type": "terminal_log", "content": stdout, "isError": False})
     if stderr:
         await emit({"type": "terminal_log", "content": stderr, "isError": True})
 
-    return {"exit_code": process.returncode, "stdout": stdout, "stderr": stderr}
+    return result
 
 
 async def _check_target_health(

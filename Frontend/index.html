@@ -941,18 +941,19 @@
                         Project
                     </div>
 
-                    <label for="repo-path" class="block text-xs text-slate-400 mb-2">
-                        Path absolut proyek di host backend
+                    <label for="repo-url" class="block text-xs text-slate-400 mb-2">
+                        URL repository GitHub
                     </label>
                     <input
-                        id="repo-path"
-                        type="text"
-                        placeholder="D:\\Projects\\my-app"
+                        id="repo-url"
+                        type="url"
+                        placeholder="https://github.com/owner/repository"
+                        required
                         autocomplete="off"
                         class="w-full rounded-md border border-border bg-panel2 px-2 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:border-blue-400 focus:outline-none"
                     >
                     <p class="mt-2 text-[10px] leading-relaxed text-slate-500">
-                        Folder harus sudah ada dan dapat diakses oleh proses Backend.
+                        Repository publik, atau kredensial Git sudah tersedia di host Backend.
                     </p>
 
                 </div>
@@ -1829,7 +1830,7 @@
 
     const startBtn = document.getElementById("start-btn");
     const resetBtn = document.getElementById("reset-btn");
-    const repoPathInput = document.getElementById("repo-path");
+    const repoUrlInput = document.getElementById("repo-url");
     const backendUrlValue = document.querySelector('meta[name="petasan-backend-url"]')?.content.trim();
     const backendBaseUrl = backendUrlValue && !backendUrlValue.startsWith("%")
         ? backendUrlValue
@@ -2517,11 +2518,11 @@
     function startAgent() {
         if (isRunning) return;
 
-        const repoPath = repoPathInput.value.trim();
-        if (!repoPath) {
+        const repoUrl = repoUrlInput.value.trim();
+        if (!repoUrl) {
             emptyState.classList.add("hidden");
-            addActivity({ type: "error", title: "Path proyek diperlukan", description: "Masukkan path absolut folder proyek yang sudah ada dan dapat diakses oleh host Backend." });
-            repoPathInput.focus();
+            addActivity({ type: "error", title: "URL GitHub diperlukan", description: "Masukkan URL repository GitHub, misalnya https://github.com/owner/repository." });
+            repoUrlInput.focus();
             return;
         }
 
@@ -2532,7 +2533,7 @@
         emptyState.classList.add("hidden");
         activityContainer.innerHTML = "";
         clearTerminal();
-        addTerminalLine("info", `Menghubungkan ke backend untuk ${repoPath}...`);
+        addTerminalLine("info", `Menghubungkan ke backend untuk ${repoUrl}...`);
         setRunningState();
 
         const socketUrl = new URL("/ws/agent", backendBaseUrl);
@@ -2540,7 +2541,7 @@
         activeSocket = new WebSocket(socketUrl);
         activeSocket.onopen = () => {
             addTerminalLine("success", "Koneksi backend tersambung.");
-            activeSocket.send(JSON.stringify({ action: "start", repo_path: repoPath }));
+            activeSocket.send(JSON.stringify({ action: "start", repo_url: repoUrl }));
         };
         activeSocket.onmessage = event => {
             let message;
@@ -2564,9 +2565,15 @@
                             : "info";
                 addActivity({ type, title, description: message.content || "" });
             } else if (message.type === "agent_error") {
-                addActivity({ type: "error", title: "Backend error", description: message.content || "Terjadi kesalahan." });
+                const detail = message.content || "Backend melaporkan error tanpa detail. Periksa log terminal.";
+                addTerminalLine("error", detail);
+                addActivity({ type: "error", title: "Backend error", description: detail });
             } else if (message.type === "agent_complete") {
-                finishAgent(message.status === "completed", message.content || "Provisioning selesai.");
+                const success = message.status === "completed";
+                const detail = message.content || (success
+                    ? "Provisioning selesai."
+                    : "Proses gagal. Periksa detail error di atas.");
+                finishAgent(success, detail);
             }
         };
         activeSocket.onclose = () => {
