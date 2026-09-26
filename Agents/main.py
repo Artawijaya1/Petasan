@@ -1,118 +1,92 @@
+from __future__ import annotations
+
+import hmac
 import os
-import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from runner import run_command
-from agents.parser_agent import scan_repository
+import sys
+from pathlib import Path
+from typing import Annotated, Any
+
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, Field
+
+AGENTS_DIRECTORY = Path(__file__).resolve().parent
+load_dotenv(AGENTS_DIRECTORY / ".env")
+
+if not os.environ.get("BOB_API_KEY"):
+    raise RuntimeError(
+        f"BOB_API_KEY tidak ditemukan. Isi {AGENTS_DIRECTORY / '.env'} "
+        "atau set environment variable BOB_API_KEY."
+    )
+
+if str(AGENTS_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(AGENTS_DIRECTORY))
+
 from agents.healing_agent import diagnose_and_fix
-from agents.health_agent import check_health
+from agents.parser_agent import create_installation_plan
 
-app = FastAPI()
+app = FastAPI(title="Petasan Agents API")
+bearer_scheme = HTTPBearer(auto_error=False)
 
-@app.websocket("/ws/agent")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
 
-    async def emit(data):
-        await websocket.send_json(data)
+class ScanRequest(BaseModel):
+    files: dict[str, str]
 
+
+class HealingRequest(BaseModel):
+    command_failed: str
+    stderr_log: str
+    attempt: int = Field(ge=1, le=3)
+
+
+async def require_service_token(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Depends(bearer_scheme),
+    ],
+) -> None:
+    expected_token = os.environ.get("AGENT_SERVICE_TOKEN")
+    if not expected_token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AGENT_SERVICE_TOKEN belum dikonfigurasi.",
+        )
+
+    if credentials is None or not hmac.compare_digest(
+        credentials.credentials,
+        expected_token,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Service token tidak valid.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok", "service": "agents"}
+
+
+@app.post("/v1/scan", dependencies=[Depends(require_service_token)])
+async def scan(request: ScanRequest) -> dict[str, Any]:
     try:
-        while True:
-            # Tunggu sinyal 'START' dari Frontend Web
-            data = await websocket.receive_json()
-            if data.get("action") == "start":
-                repo_path = data.get("repo_path", "./my-target-app")
-                
-                # 1. Tampilkan Thought Process: Scanning
-                await emit({
-                    "type": "agent_thought",
-                    "title": "Menganalisis Repositori Proyek",
-                    "content": f"Memindai struktur berkas di {repo_path}...",
-                    "status": "in_progress"
-                })
+        return await create_installation_plan(request.files)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-                # 2. Parsing Konfigurasi
-                plan = await scan_repository(repo_path)
-                
-                # Buat .env jika diperlukan
-                if plan.get("env_needed") and os.path.exists(os.path.join(repo_path, ".env.example")):
-                    with open(os.path.join(repo_path, ".env.example"), "r") as f_in:
-                        env_content = f_in.read()
-                    with open(os.path.join(repo_path, ".env"), "w") as f_out:
-                        f_out.write(env_content)
-                    await emit({
-                        "type": "agent_thought",
-                        "title": "Auto-Generating .env",
-                        "content": "File .env berhasil dibuat dari .env.example dengan default values.",
-                        "status": "completed"
-                    })
 
-                commands = plan.get("commands", [])
-
-                # 3. Execution & Auto-Healing Loop
-                for cmd in commands:
-                    attempt = 1
-                    max_attempts = 3
-                    current_cmd = cmd
-
-                    while attempt <= max_attempts:
-                        result = await run_command(current_cmd, emit)
-
-                        if result["exit_code"] == 0:
-                            # Sukses
-                            return
-                        else:
-                            # Error Terjadi! Trigger Auto-Healing
-                            await emit({
-                                "type": "agent_thought",
-                                "title": f"Mendeteksi Failure pada '{current_cmd}'",
-                                "content": "Error terdeteksi. Mengirim stderr log ke Auto-Healing Agent...",
-                                "status": "in_progress"
-                            })
-
-                            # Dapatkan saran perbaikan dari LLM
-                            healing_res = await diagnose_and_fix(current_cmd, result["stderr"], attempt)
-                            if not isinstance(healing_res, dict):
-                                await emit({
-                                    "type": "agent_thought",
-                                    "title": "Auto-Healing gagal",
-                                    "content": "Agent tidak dapat menghasilkan perintah perbaikan.",
-                                    "status": "failed"
-                                })
-                                break
-
-                            await emit({
-                                "type": "agent_thought",
-                                "title": f"Auto-Healing Strategy: {healing_res['thought_title']}",
-                                "content": healing_res['thought_detail'],
-                                "status": "in_progress"
-                            })
-
-                            # Update perintah ke perintah perbaikan baru
-                            current_cmd = healing_res["fix_command"]
-                            attempt += 1
-
-                # 4. Selesai
-                await emit({
-                    "type": "agent_thought",
-                    "title": "Environment Ready!",
-                    "content": "Semua dependensi terpasang dan layanan berhasil dijalankan.",
-                    "status": "completed"
-                })
-
-                is_healthy = await check_health(
-                    target_url="http://localhost:3000",  # Sesuaikan port aplikasi target
-                    max_retries=10,
-                    delay_seconds=2,
-                    websocket_send_fn=emit
-                )
-
-                # 5. Beri sinyal akhir ke Dashboard Web
-                await emit({
-                    "type": "agent_thought",
-                    "title": "SYSTEM READY FOR DEMO!",
-                    "content": "Environment siap digunakan tanpa kesalahan.",
-                    "status": "completed"
-                })
-            
-    except WebSocketDisconnect:
-     print("Client disconnected")
+@app.post("/v1/heal", dependencies=[Depends(require_service_token)])
+async def heal(request: HealingRequest) -> dict[str, Any]:
+    result = await diagnose_and_fix(
+        request.command_failed,
+        request.stderr_log,
+        request.attempt,
+    )
+    if result is None:
+        raise HTTPException(
+            status_code=502,
+            detail="Agents tidak dapat menghasilkan diagnosis perbaikan.",
+        )
+    return result

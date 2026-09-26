@@ -1,21 +1,23 @@
-import sys
+import asyncio
+import os
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
+load_dotenv(BACKEND_DIRECTORY / ".env")
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-AGENTS_DIRECTORY = REPOSITORY_ROOT / "Agents"
-load_dotenv(AGENTS_DIRECTORY / ".env")
-
-if str(REPOSITORY_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPOSITORY_ROOT))
-
-from Agents.agents.health_agent import check_health
-from Agents.agents.healing_agent import diagnose_and_fix
-from Agents.agents.parser_agent import scan_repository
-from Agents.runner import run_command
+AGENTS_API_URL = os.environ.get("AGENTS_API_URL", "http://127.0.0.1:8001").rstrip("/")
+FILES_TO_SCAN = (
+    "package.json",
+    "requirements.txt",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".env.example",
+    "README.md",
+)
 
 app = FastAPI(title="Petasan Backend")
 
@@ -25,6 +27,125 @@ def root():
     return {
         "message": "Backend Petasan berhasil berjalan!"
     }
+
+async def _call_agents(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
+    service_token = os.environ.get("AGENT_SERVICE_TOKEN")
+    if not service_token:
+        raise RuntimeError("AGENT_SERVICE_TOKEN belum dikonfigurasi di Backend.")
+
+    try:
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            response = await client.post(
+                f"{AGENTS_API_URL}{endpoint}",
+                json=payload,
+                headers={"Authorization": f"Bearer {service_token}"},
+            )
+            response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        try:
+            detail = exc.response.json().get("detail", exc.response.text)
+        except ValueError:
+            detail = exc.response.text
+        raise RuntimeError(
+            f"Agents API mengembalikan HTTP {exc.response.status_code}: {detail}"
+        ) from exc
+    except httpx.RequestError as exc:
+        raise RuntimeError(f"Tidak dapat menghubungi Agents API: {exc}") from exc
+
+    result = response.json()
+    if not isinstance(result, dict):
+        raise RuntimeError("Respons Agents API harus berupa objek JSON.")
+    return result
+
+
+def _read_repository_files(repo_path: Path) -> dict[str, str]:
+    files: dict[str, str] = {}
+    for file_name in FILES_TO_SCAN:
+        file_path = repo_path / file_name
+        try:
+            if file_path.is_file():
+                files[file_name] = file_path.read_text(
+                    encoding="utf-8",
+                    errors="ignore",
+                )[:2000]
+        except OSError:
+            continue
+    return files
+
+
+async def _run_command(
+    command: str,
+    emit: Callable[[dict[str, Any]], Awaitable[None]],
+    cwd: str,
+) -> dict[str, Any]:
+    await emit({
+        "type": "terminal_log",
+        "content": f"$ {command}\n",
+        "isError": False,
+    })
+
+    process = await asyncio.create_subprocess_shell(
+        command,
+        cwd=cwd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout_bytes, stderr_bytes = await process.communicate()
+    stdout = stdout_bytes.decode("utf-8", errors="replace")
+    stderr = stderr_bytes.decode("utf-8", errors="replace")
+
+    if stdout:
+        await emit({"type": "terminal_log", "content": stdout, "isError": False})
+    if stderr:
+        await emit({"type": "terminal_log", "content": stderr, "isError": True})
+
+    return {"exit_code": process.returncode, "stdout": stdout, "stderr": stderr}
+
+
+async def _check_target_health(
+    target_url: str,
+    emit: Callable[[dict[str, Any]], Awaitable[None]],
+    max_retries: int = 10,
+    delay_seconds: int = 2,
+) -> bool:
+    await emit({
+        "type": "agent_thought",
+        "title": "Verifikasi Layanan (Health Check)",
+        "content": f"Memverifikasi status server lokal di {target_url}...",
+        "status": "in_progress",
+    })
+
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = await client.get(target_url)
+                if 200 <= response.status_code < 400:
+                    await emit({
+                        "type": "agent_thought",
+                        "title": "Health Check Passed!",
+                        "content": f"Layanan merespons dengan HTTP {response.status_code}.",
+                        "status": "completed",
+                    })
+                    return True
+                error = f"HTTP {response.status_code}"
+            except httpx.HTTPError as exc:
+                error = str(exc) or "Connection refused"
+
+            await emit({
+                "type": "terminal_log",
+                "content": f"[Health Check] Percobaan {attempt}/{max_retries}: {error}\n",
+                "isError": False,
+            })
+            if attempt < max_retries:
+                await asyncio.sleep(delay_seconds)
+
+    await emit({
+        "type": "agent_thought",
+        "title": "Health Check Warning",
+        "content": f"Server tidak merespons di {target_url} setelah {max_retries} percobaan.",
+        "status": "completed",
+    })
+    return False
 
 
 @app.websocket("/ws/agent")
@@ -84,7 +205,8 @@ async def _run_agent(
         "status": "in_progress",
     })
 
-    plan = await scan_repository(str(repo_path))
+    repository_files = await asyncio.to_thread(_read_repository_files, repo_path)
+    plan = await _call_agents("/v1/scan", {"files": repository_files})
     if not isinstance(plan, dict):
         raise ValueError("Rencana agent dari parser bukan objek JSON.")
 
@@ -111,7 +233,7 @@ async def _run_agent(
         succeeded = False
 
         for attempt in range(1, 4):
-            result = await run_command(current_command, emit, cwd=str(repo_path))
+            result = await _run_command(current_command, emit, cwd=str(repo_path))
             if result["exit_code"] == 0:
                 succeeded = True
                 break
@@ -125,10 +247,13 @@ async def _run_agent(
                 "content": "Error terdeteksi. Mengirim stderr log ke Auto-Healing Agent...",
                 "status": "in_progress",
             })
-            healing_result = await diagnose_and_fix(
-                current_command,
-                result["stderr"],
-                attempt,
+            healing_result = await _call_agents(
+                "/v1/heal",
+                {
+                    "command_failed": current_command,
+                    "stderr_log": result["stderr"],
+                    "attempt": attempt,
+                },
             )
             if not isinstance(healing_result, dict):
                 raise ValueError("Respons Auto-Healing Agent bukan objek JSON.")
@@ -159,11 +284,9 @@ async def _run_agent(
         "status": "completed",
     })
 
-    is_healthy = await check_health(
+    is_healthy = await _check_target_health(
         target_url="http://localhost:3000",
-        max_retries=10,
-        delay_seconds=2,
-        websocket_send_fn=emit,
+        emit=emit,
     )
     await emit({
         "type": "agent_thought",

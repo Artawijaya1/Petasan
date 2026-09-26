@@ -25,7 +25,6 @@ BOB_MODEL = os.environ.get("BOB_MODEL", "bob")
 
 async def scan_repository(repo_path: str) -> dict:
     files_to_check = ['package.json', 'requirements.txt', 'Dockerfile', 'docker-compose.yml', '.env.example', 'README.md']
-    found_files = {}
 
     def _read_files() -> dict:
         """Baca file secara sinkron — dijalankan lewat asyncio.to_thread agar tidak memblokir event loop."""
@@ -42,6 +41,10 @@ async def scan_repository(repo_path: str) -> dict:
         return result
 
     found_files = await asyncio.to_thread(_read_files)
+    return await create_installation_plan(found_files)
+
+
+async def create_installation_plan(found_files: dict[str, str]) -> dict:
 
     prompt = f"""
     Kamu adalah DevOps Architect Agent.

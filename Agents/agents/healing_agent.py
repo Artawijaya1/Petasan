@@ -11,7 +11,7 @@ logger = logging.getLogger("healing_agent")
 
 client = AsyncOpenAI(
     api_key=os.environ.get("BOB_API_KEY"),
-    base_url=os.environ.get("BOB_BASE_URL", "https://api-hackathon-ibm.com/v1"),
+    base_url=os.environ.get("BOB_BASE_URL", "https://bob.ibm.com/api"),
     timeout=20.0,
     max_retries=2,
 )
