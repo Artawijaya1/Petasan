@@ -61,59 +61,124 @@ class TestWebSocketEndpoint:
             data = ws.receive_json()
         assert data["type"] == "agent_error"
 
-    def test_empty_repo_path_returns_agent_error(self, client: TestClient) -> None:
-        """repo_path kosong harus mengembalikan agent_error."""
+    def test_empty_repo_url_returns_agent_error(self, client: TestClient) -> None:
+        """URL repository kosong harus mengembalikan agent_error."""
         with client.websocket_connect("/ws/agent") as ws:
-            ws.send_json({"action": "start", "repo_path": "   "})
+            ws.send_json({"action": "start", "repo_url": "   "})
             data = ws.receive_json()
         assert data["type"] == "agent_error"
-        assert "repo_path" in data["content"].lower()
+        assert "url" in data["content"].lower()
 
-    def test_nonexistent_repo_path_returns_agent_error(self, client: TestClient) -> None:
-        """Path yang tidak ada harus mengembalikan agent_error."""
+    def test_invalid_repo_url_returns_agent_error(self, client: TestClient) -> None:
+        """URL GitHub yang tidak valid harus mengembalikan agent_error."""
         with client.websocket_connect("/ws/agent") as ws:
-            ws.send_json({"action": "start", "repo_path": "/does/not/exist/ever"})
+            ws.send_json({"action": "start", "repo_url": "not-a-github-url"})
             data = ws.receive_json()
         assert data["type"] == "agent_error"
-        assert "tidak ditemukan" in data["content"].lower()
+        assert "url" in data["content"].lower()
 
     def test_valid_request_calls_run_agent(self, client: TestClient) -> None:
-        """Dengan path yang valid, harus memanggil run_agent dan mengembalikan event."""
+        """Dengan URL valid, backend clone lalu memanggil runner."""
         events: list[dict] = []
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            async def fake_run_agent(repo_path, emit_fn) -> None:
-                await emit_fn({"type": "agent_thought", "title": "Done", "content": "ok", "status": "completed"})
+        async def fake_clone(repo_url, destination, emit_fn) -> None:
+            return None
 
-            with patch("app.api.routes.run_agent", side_effect=fake_run_agent):
-                with client.websocket_connect("/ws/agent") as ws:
-                    ws.send_json({"action": "start", "repo_path": tmp_dir})
-                    data = ws.receive_json()
-                    events.append(data)
+        async def fake_run_agent(repo_path, emit_fn, request_approval) -> bool:
+            await emit_fn({"type": "agent_thought", "title": "Done", "content": "ok", "status": "completed"})
+            return False
+
+        with patch("app.api.routes._clone_repository", side_effect=fake_clone), \
+             patch("app.api.routes.run_agent", side_effect=fake_run_agent):
+            with client.websocket_connect("/ws/agent") as ws:
+                ws.send_json({"action": "start", "repo_url": "https://github.com/example/repository"})
+                events.append(ws.receive_json())
 
         assert len(events) >= 1
         assert events[0]["type"] == "agent_thought"
 
     def test_run_agent_exception_emits_agent_thought_failed(self, client: TestClient) -> None:
         """Jika run_agent throw exception, harus memancarkan agent_thought dengan status failed."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            async def raise_error(repo_path, emit_fn) -> None:
-                raise RuntimeError("Unexpected failure")
+        async def fake_clone(repo_url, destination, emit_fn) -> None:
+            return None
 
-            with patch("app.api.routes.run_agent", side_effect=raise_error):
-                with client.websocket_connect("/ws/agent") as ws:
-                    ws.send_json({"action": "start", "repo_path": tmp_dir})
+        async def raise_error(repo_path, emit_fn, request_approval) -> bool:
+            raise RuntimeError("Unexpected failure")
+
+        with patch("app.api.routes._clone_repository", side_effect=fake_clone), \
+             patch("app.api.routes.run_agent", side_effect=raise_error):
+            with client.websocket_connect("/ws/agent") as ws:
+                ws.send_json({"action": "start", "repo_url": "https://github.com/example/repository"})
+                events = []
+                while True:
                     data = ws.receive_json()
+                    events.append(data)
+                    if data.get("type") == "agent_complete":
+                        break
 
-        assert data["type"] == "agent_thought"
-        assert data["status"] == "failed"
-        assert "Unexpected failure" in data["content"]
+        errors = [event for event in events if event.get("type") == "agent_error"]
+        assert errors
+        assert "Unexpected failure" in errors[0]["content"]
 
-    def test_default_repo_path_used_when_missing(self, client: TestClient) -> None:
-        """Jika repo_path tidak ada di payload, default './my-target-app' dipakai."""
-        # Path default tidak ada → agent_error (direktori tidak ditemukan)
+    def test_missing_repo_url_returns_agent_error(self, client: TestClient) -> None:
+        """URL GitHub wajib diisi."""
         with client.websocket_connect("/ws/agent") as ws:
             ws.send_json({"action": "start"})
             data = ws.receive_json()
-        # Bisa agent_error (path tidak ditemukan) atau agent_thought (jika path ada)
-        assert data["type"] in ("agent_error", "agent_thought")
+        assert data["type"] == "agent_error"
+
+    def test_approval_response_is_forwarded_to_runner(self, client: TestClient) -> None:
+        approvals: list[bool] = []
+
+        async def fake_clone(repo_url, destination, emit_fn) -> None:
+            return None
+
+        async def fake_run_agent(repo_path, emit_fn, request_approval) -> bool:
+            approvals.append(await request_approval("npm install", "Menjalankan setup"))
+            return False
+
+        with patch("app.api.routes._clone_repository", side_effect=fake_clone), \
+             patch("app.api.routes.run_agent", side_effect=fake_run_agent):
+            with client.websocket_connect("/ws/agent") as ws:
+                ws.send_json({"action": "start", "repo_url": "https://github.com/example/repository"})
+                while True:
+                    event = ws.receive_json()
+                    if event.get("type") == "approval_required":
+                        assert event["command"] == "npm install"
+                        ws.send_json({
+                            "action": "approval_response",
+                            "request_id": event["request_id"],
+                            "approved": True,
+                        })
+                    elif event.get("type") == "agent_complete":
+                        break
+
+        assert approvals == [True]
+
+    def test_rejection_is_forwarded_to_runner(self, client: TestClient) -> None:
+        approvals: list[bool] = []
+
+        async def fake_clone(repo_url, destination, emit_fn) -> None:
+            return None
+
+        async def fake_run_agent(repo_path, emit_fn, request_approval) -> bool:
+            approvals.append(await request_approval("npm install", "Menjalankan setup"))
+            return False
+
+        with patch("app.api.routes._clone_repository", side_effect=fake_clone), \
+             patch("app.api.routes.run_agent", side_effect=fake_run_agent):
+            with client.websocket_connect("/ws/agent") as ws:
+                ws.send_json({"action": "start", "repo_url": "https://github.com/example/repository"})
+                while True:
+                    event = ws.receive_json()
+                    if event.get("type") == "approval_required":
+                        ws.send_json({
+                            "action": "approval_response",
+                            "request_id": event["request_id"],
+                            "approved": False,
+                        })
+                    elif event.get("type") == "agent_complete":
+                        assert event["service_started"] is False
+                        break
+
+        assert approvals == [False]

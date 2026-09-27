@@ -68,4 +68,4 @@ Endpoint scan dan heal memerlukan header `Authorization: Bearer <AGENT_SERVICE_T
 }
 ```
 
-URL harus menunjuk ke repository di `github.com` melalui HTTPS. Backend membaca berkas dan menjalankan perintah proyek hasil clone di workspace sementara.
+URL harus menunjuk ke repository di `github.com` melalui HTTPS. Backend mengecek manifest sebelum meminta rencana setup. Tanpa manifest yang sesuai, scan berhenti tanpa menjalankan install. Setiap command setup, perbaikan, dan start ditampilkan di UI serta menunggu persetujuan user. `npm init` diblokir dan file `.env` tidak dibuat otomatis atau dikirim ke model. Untuk aplikasi web, parser memisahkan `start_command` dan port; Backend menjalankan server sebagai proses latar dan mengecek port yang dipilih, bukan mengasumsikan 3000. Server yang berhasil start tetap hidup sampai Backend dihentikan, lalu proses dan workspace dibersihkan.

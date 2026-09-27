@@ -1,14 +1,16 @@
 import asyncio
 import re
+import shutil
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from ..services.agent_runner import run_agent
+from ..services.agent_runner import is_workspace_retained, run_agent
 
 router = APIRouter()
 GITHUB_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -155,11 +157,36 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 })
                 continue
 
+            workspace = Path(tempfile.mkdtemp(prefix="petasan-"))
+            service_started = False
             try:
-                with tempfile.TemporaryDirectory(prefix="petasan-") as workspace:
-                    repo_path = Path(workspace) / "repository"
-                    await _clone_repository(repo_url, repo_path, emit)
-                    await run_agent(repo_path, emit)
+                repo_path = workspace / "repository"
+                await _clone_repository(repo_url, repo_path, emit)
+
+                async def request_approval(command: str, purpose: str) -> bool:
+                    request_id = uuid.uuid4().hex
+                    await emit({
+                        "type": "approval_required",
+                        "request_id": request_id,
+                        "command": command,
+                        "reason": purpose,
+                    })
+                    while True:
+                        response = await websocket.receive_json()
+                        if (
+                            isinstance(response, dict)
+                            and response.get("action") == "approval_response"
+                            and response.get("request_id") == request_id
+                            and isinstance(response.get("approved"), bool)
+                        ):
+                            return response["approved"]
+                        await emit({
+                            "type": "terminal_log",
+                            "content": "Respons approval tidak valid; gunakan tombol Setujui atau Tolak.\n",
+                            "isError": True,
+                        })
+
+                service_started = await run_agent(repo_path, emit, request_approval)
             except Exception as exc:
                 if isinstance(exc, WebSocketDisconnect):
                     raise
@@ -170,13 +197,21 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                     "isError": True,
                 })
                 await emit({"type": "agent_error", "content": detail})
+            finally:
+                if not is_workspace_retained(workspace):
+                    shutil.rmtree(workspace, ignore_errors=True)
             await emit({
                 "type": "agent_complete",
                 "status": "failed" if failed else "completed",
+                "service_started": service_started,
                 "content": failure_detail or (
                     "Proses gagal. Periksa detail error di atas."
                     if failed
-                    else "Provisioning selesai."
+                    else (
+                        "Environment siap dan aplikasi berjalan."
+                        if service_started
+                        else "Pemeriksaan environment selesai; tidak ada aplikasi yang dijalankan."
+                    )
                 ),
             })
     except WebSocketDisconnect:

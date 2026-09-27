@@ -1,5 +1,12 @@
 import asyncio
+import json
+import os
+import re
+import shutil
+import socket
 import subprocess
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
@@ -10,11 +17,33 @@ from .agents_client import call_agents
 FILES_TO_SCAN = (
     "package.json",
     "requirements.txt",
+    "pyproject.toml",
+    "Pipfile",
+    "environment.yml",
     "Dockerfile",
     "docker-compose.yml",
-    ".env.example",
+    "compose.yml",
+    "compose.yaml",
     "README.md",
 )
+PYTHON_MANIFESTS = ("requirements.txt", "pyproject.toml", "Pipfile", "environment.yml")
+DOCKER_MANIFESTS = ("Dockerfile", "docker-compose.yml", "compose.yml", "compose.yaml")
+NODE_COMMAND_PATTERN = re.compile(r"(?:^|[\s;&|])(?:npm|npx|pnpm|yarn|bun)(?:\.cmd)?(?:\s|$)", re.IGNORECASE)
+NPM_INIT_PATTERN = re.compile(r"(?:^|[\s;&|])npm(?:\.cmd)?\s+init(?:\s|$)", re.IGNORECASE)
+PYTHON_INSTALL_PATTERN = re.compile(r"(?:^|[\s;&|])(?:pip(?:\d+(?:\.\d+)*)?|(?:python|py)(?:\d+(?:\.\d+)*)?(?:\.exe)?\s+-m\s+pip|uv(?:\s+pip)?\s+(?:sync|install|add)|poetry\s+(?:install|add)|conda\s+(?:install|env\s+(?:create|update)))(?:\s|$)", re.IGNORECASE)
+DOCKER_COMMAND_PATTERN = re.compile(r"(?:^|[\s;&|])docker(?:\.exe)?(?:\s|$)", re.IGNORECASE)
+START_SCRIPT_PATTERN = re.compile(r"\b(?:run\s+(?:dev|start|serve)|start|serve)\b", re.IGNORECASE)
+
+
+@dataclass
+class TargetRuntime:
+    process: subprocess.Popen[str]
+    workspace: Path
+    output_task: asyncio.Task[None]
+
+
+_ACTIVE_TARGETS: dict[int, TargetRuntime] = {}
+_RETAINED_WORKSPACES: set[Path] = set()
 
 
 def _read_repository_files(repo_path: Path) -> dict[str, str]:
@@ -79,6 +108,7 @@ async def _check_target_health(
     emit: Callable[[dict[str, Any]], Awaitable[None]],
     max_retries: int = 10,
     delay_seconds: int = 2,
+    process: subprocess.Popen[str] | None = None,
 ) -> bool:
     await emit({
         "type": "agent_thought",
@@ -89,6 +119,14 @@ async def _check_target_health(
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         for attempt in range(1, max_retries + 1):
+            if process is not None and process.poll() is not None:
+                error = f"Proses server berhenti dengan exit code {process.returncode}"
+                await emit({
+                    "type": "terminal_log",
+                    "content": f"[Health Check] {error}\n",
+                    "isError": True,
+                })
+                break
             try:
                 response = await client.get(target_url)
                 if 200 <= response.status_code < 400:
@@ -120,32 +158,226 @@ async def _check_target_health(
     return False
 
 
+async def _stream_target_output(
+    process: subprocess.Popen[str],
+    emit: Callable[[dict[str, Any]], Awaitable[None]],
+) -> None:
+    if process.stdout is None:
+        return
+    while line := await asyncio.to_thread(process.stdout.readline):
+        try:
+            await emit({"type": "terminal_log", "content": line, "isError": False})
+        except Exception:
+            continue
+
+
+async def _stop_target_process(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        await asyncio.to_thread(
+            subprocess.run,
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        process.terminate()
+    try:
+        await asyncio.wait_for(asyncio.to_thread(process.wait), timeout=5)
+    except asyncio.TimeoutError:
+        process.kill()
+        await asyncio.to_thread(process.wait)
+
+
+async def _start_target_service(
+    command: str,
+    port: int,
+    repo_path: Path,
+    emit: Callable[[dict[str, Any]], Awaitable[None]],
+) -> bool:
+    target_url = f"http://127.0.0.1:{port}"
+    with socket.socket() as port_probe:
+        try:
+            port_probe.bind(("127.0.0.1", port))
+        except OSError:
+            await emit({
+                "type": "agent_thought",
+                "title": "Port aplikasi sudah digunakan",
+                "content": f"Port {port} sudah ditempati. Server baru tidak dijalankan agar health check tidak salah mengukur service lain.",
+                "status": "failed",
+            })
+            return False
+
+    await emit({
+        "type": "agent_thought",
+        "title": "Menjalankan aplikasi",
+        "content": f"Menjalankan command yang disetujui di {target_url}...",
+        "status": "in_progress",
+    })
+    process = await asyncio.to_thread(
+        subprocess.Popen,
+        command,
+        cwd=str(repo_path),
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,
+    )
+    output_task = asyncio.create_task(_stream_target_output(process, emit))
+    healthy = await _check_target_health(target_url, emit, process=process)
+    if healthy and process.poll() is None:
+        workspace = repo_path.parent.resolve()
+        _ACTIVE_TARGETS[process.pid] = TargetRuntime(process, workspace, output_task)
+        _RETAINED_WORKSPACES.add(workspace)
+        await emit({
+            "type": "agent_thought",
+            "title": "Aplikasi siap",
+            "content": f"Aplikasi merespons di {target_url}.",
+            "status": "completed",
+        })
+        return True
+
+    await _stop_target_process(process)
+    await output_task
+    await emit({
+        "type": "agent_thought",
+        "title": "Aplikasi belum siap",
+        "content": f"Server tidak merespons di {target_url}. Periksa command dan log di atas.",
+        "status": "failed",
+    })
+    return False
+
+
+async def cleanup_target_processes() -> None:
+    for runtime in list(_ACTIVE_TARGETS.values()):
+        await _stop_target_process(runtime.process)
+        if not runtime.output_task.done():
+            await runtime.output_task
+        shutil.rmtree(runtime.workspace, ignore_errors=True)
+    _ACTIVE_TARGETS.clear()
+    _RETAINED_WORKSPACES.clear()
+
+
+def is_workspace_retained(workspace: Path) -> bool:
+    return workspace.resolve() in _RETAINED_WORKSPACES
+
+
+def _command_matches_manifest(command: str, node: bool, python: bool, docker: bool) -> bool:
+    if NPM_INIT_PATTERN.search(command):
+        return False
+    if NODE_COMMAND_PATTERN.search(command) and not node:
+        return False
+    if PYTHON_INSTALL_PATTERN.search(command) and not python:
+        return False
+    if DOCKER_COMMAND_PATTERN.search(command) and not docker:
+        return False
+    return True
+
+
+def _infer_start_settings(plan: dict[str, Any], repo_path: Path) -> tuple[str | None, int | None]:
+    start_command = plan.get("start_command")
+    port = plan.get("port")
+    package_file = repo_path / "package.json"
+
+    package_data: dict[str, Any] = {}
+    if package_file.is_file():
+        try:
+            package_data = json.loads(package_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            package_data = {}
+
+    scripts = package_data.get("scripts", {})
+    scripts = scripts if isinstance(scripts, dict) else {}
+    start_script = next(
+        (name for name in ("dev", "start", "serve") if isinstance(scripts.get(name), str)),
+        None,
+    )
+
+    if not start_command and start_script:
+        start_command = f"npm run {start_script}"
+
+    if start_command and not isinstance(start_command, str):
+        raise ValueError("start_command dari Agent harus berupa string atau null.")
+
+    if isinstance(port, str) and port.isdigit():
+        port = int(port)
+    if port is None and start_command:
+        script_text = str(scripts.get(start_script, "")) if start_script else ""
+        port_match = re.search(r"(?:--port(?:=|\s+)|PORT=)(\d{2,5})", f"{start_command} {script_text}")
+        if port_match:
+            port = int(port_match.group(1))
+        elif "vite" in script_text.lower() or "vite" in start_command.lower():
+            port = 5173
+        elif "next" in script_text.lower() or "next" in start_command.lower():
+            port = 3000
+
+    if start_command and port is None:
+        raise ValueError("Port server tidak terdeteksi. Agent harus memberikan port yang benar.")
+    if port is not None and (
+        not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535
+    ):
+        raise ValueError("Port server dari Agent tidak valid.")
+    return start_command, port
+
+
 async def run_agent(
     repo_path: Path,
     emit: Callable[[dict[str, Any]], Awaitable[None]],
-) -> None:
+    request_approval: Callable[[str, str], Awaitable[bool]] | None = None,
+) -> bool:
     await emit({
         "type": "agent_thought",
-        "title": "Menganalisis Repositori Proyek",
-        "content": f"Memindai struktur berkas di {repo_path}...",
+        "title": "Memeriksa environment repository",
+        "content": "Memeriksa manifest dependency sebelum merencanakan instalasi...",
         "status": "in_progress",
     })
 
     repository_files = await asyncio.to_thread(_read_repository_files, repo_path)
+    node_manifest = (repo_path / "package.json").is_file()
+    python_manifest = any((repo_path / name).is_file() for name in PYTHON_MANIFESTS)
+    docker_manifest = any((repo_path / name).is_file() for name in DOCKER_MANIFESTS)
+
+    env_templates = [
+        name for name in (".env.example", ".env.sample", ".env.template")
+        if (repo_path / name).is_file()
+    ]
+    if env_templates:
+        env_exists = (repo_path / ".env").is_file()
+        await emit({
+            "type": "agent_thought",
+            "title": ".env tersedia" if env_exists else "Template .env perlu ditinjau",
+            "content": (
+                f"Template {', '.join(env_templates)} ditemukan. Nilai file tidak dibaca; .env tidak dibuat otomatis."
+                if not env_exists
+                else f"Template {', '.join(env_templates)} dan .env ditemukan. Nilai file tidak dibaca."
+            ),
+            "status": "completed",
+        })
+    elif (repo_path / ".env").is_file():
+        await emit({
+            "type": "agent_thought",
+            "title": ".env tersedia",
+            "content": "File .env ditemukan. Isinya tidak dibaca atau dikirim ke model.",
+            "status": "completed",
+        })
+
+    if not (node_manifest or python_manifest or docker_manifest):
+        await emit({
+            "type": "agent_thought",
+            "title": "Tidak ada manifest dependency",
+            "content": "Repository ini tidak punya package.json, manifest Python, atau manifest Docker. Tidak ada command install yang dijalankan.",
+            "status": "completed",
+        })
+        return False
+
     plan = await call_agents("/v1/scan", {"files": repository_files})
     if not isinstance(plan, dict):
         raise ValueError("Rencana agent dari parser bukan objek JSON.")
-
-    example_env = repo_path / ".env.example"
-    target_env = repo_path / ".env"
-    if plan.get("env_needed") and example_env.is_file() and not target_env.exists():
-        target_env.write_text(example_env.read_text(encoding="utf-8"), encoding="utf-8")
-        await emit({
-            "type": "agent_thought",
-            "title": "Auto-Generating .env",
-            "content": "File .env berhasil dibuat dari .env.example.",
-            "status": "completed",
-        })
 
     commands = plan.get("commands", [])
     if not isinstance(commands, list) or any(
@@ -154,11 +386,54 @@ async def run_agent(
     ):
         raise ValueError("Daftar commands dari parser tidak valid.")
 
+    start_command, port = _infer_start_settings(plan, repo_path)
+    setup_commands: list[str] = []
     for command in commands:
+        if not _command_matches_manifest(command, node_manifest, python_manifest, docker_manifest):
+            await emit({
+                "type": "terminal_log",
+                "content": f"Command ditolak: tidak cocok dengan manifest atau membuat manifest baru: {command}\n",
+                "isError": True,
+            })
+            continue
+        if NODE_COMMAND_PATTERN.search(command) and START_SCRIPT_PATTERN.search(command):
+            if start_command is None:
+                start_command = command
+            continue
+        setup_commands.append(command)
+
+    async def approve(command: str, purpose: str) -> bool:
+        if request_approval is None:
+            return False
+        return await request_approval(command, purpose)
+
+    async def report_denial(command: str) -> None:
+        await emit({
+            "type": "agent_thought",
+            "title": "Command tidak dijalankan",
+            "content": f"Persetujuan tidak diberikan untuk: {command}",
+            "status": "completed",
+        })
+
+    if not setup_commands and start_command is None:
+        await emit({
+            "type": "agent_thought",
+            "title": "Pemeriksaan environment selesai",
+            "content": "Tidak ada command instalasi atau server yang didefinisikan project.",
+            "status": "completed",
+        })
+        return False
+
+    for command in setup_commands:
         current_command = command
         succeeded = False
 
         for attempt in range(1, 4):
+            purpose = "Menjalankan command setup" if attempt == 1 else "Menjalankan command perbaikan"
+            if not await approve(current_command, purpose):
+                await report_denial(current_command)
+                return False
+
             result = await _run_command(current_command, emit, cwd=str(repo_path))
             if result["exit_code"] == 0:
                 succeeded = True
@@ -186,6 +461,13 @@ async def run_agent(
             current_command = healing_result.get("fix_command", "")
             if not isinstance(current_command, str) or not current_command.strip():
                 raise ValueError("Auto-Healing Agent tidak memberikan fix_command yang valid.")
+            if not _command_matches_manifest(current_command, node_manifest, python_manifest, docker_manifest):
+                await emit({
+                    "type": "terminal_log",
+                    "content": f"Command perbaikan ditolak: tidak cocok dengan manifest atau membuat manifest baru: {current_command}\n",
+                    "isError": True,
+                })
+                return False
 
             await emit({
                 "type": "agent_thought",
@@ -201,26 +483,36 @@ async def run_agent(
                 "content": f"Perintah gagal setelah 3 percobaan: {current_command}",
                 "status": "failed",
             })
-            return
+            return False
 
-    await emit({
-        "type": "agent_thought",
-        "title": "Environment Ready!",
-        "content": "Semua perintah yang direncanakan berhasil dijalankan.",
-        "status": "completed",
-    })
+    if start_command is None:
+        await emit({
+            "type": "agent_thought",
+            "title": "Environment setup selesai",
+            "content": "Setup selesai; tidak ada server aplikasi yang didefinisikan untuk dijalankan.",
+            "status": "completed",
+        })
+        return False
 
-    is_healthy = await _check_target_health(
-        target_url="http://localhost:3000",
-        emit=emit,
-    )
-    await emit({
-        "type": "agent_thought",
-        "title": "SYSTEM READY FOR DEMO!" if is_healthy else "Health Check Warning",
-        "content": (
-            "Environment siap digunakan."
-            if is_healthy
-            else "Perintah berhasil dijalankan, tetapi layanan belum merespons pada port 3000."
-        ),
-        "status": "completed" if is_healthy else "failed",
-    })
+    if port is None:
+        raise ValueError("Port aplikasi tidak ditemukan. Agent harus memilih port sesuai konfigurasi project.")
+    if not _command_matches_manifest(start_command, node_manifest, python_manifest, docker_manifest):
+        await emit({
+            "type": "terminal_log",
+            "content": f"Start command ditolak karena tidak cocok dengan manifest: {start_command}\n",
+            "isError": True,
+        })
+        return False
+    if not await approve(start_command, "Menjalankan server aplikasi"):
+        await report_denial(start_command)
+        return False
+
+    is_healthy = await _start_target_service(start_command, port, repo_path, emit)
+    if is_healthy:
+        await emit({
+            "type": "agent_thought",
+            "title": "Environment Ready!",
+            "content": f"Aplikasi berjalan dan merespons di http://127.0.0.1:{port}.",
+            "status": "completed",
+        })
+    return is_healthy

@@ -990,7 +990,7 @@
                         />
                     </svg>
 
-                    Start Provisioning
+                    Check Environment
 
                 </button>
 
@@ -2623,21 +2623,38 @@
     }
 
 
-    function finishAgent(success, detail) {
+    function finishAgent(success, detail, serviceStarted = false) {
         if (!isRunning) return;
 
         isRunning = false;
         if (success) {
             setCompleteState();
-            finalStatus.textContent = "READY";
-            finalStatus.className = "text-xl font-bold text-green-400";
-            healthDot.className = "w-2 h-2 rounded-full bg-green-500";
-            healthText.textContent = "Healthy";
-            healthText.className = "font-semibold text-sm text-green-400";
-            afterService.textContent = "Running";
-            afterService.className = "text-green-400";
-            afterHealth.textContent = "Healthy";
-            afterHealth.className = "text-green-400";
+            if (serviceStarted) {
+                finalStatus.textContent = "READY";
+                finalStatus.className = "text-xl font-bold text-green-400";
+                healthDot.className = "w-2 h-2 rounded-full bg-green-500";
+                healthText.textContent = "Healthy";
+                healthText.className = "font-semibold text-sm text-green-400";
+                afterService.textContent = "Running";
+                afterService.className = "text-green-400";
+                afterHealth.textContent = "Healthy";
+                afterHealth.className = "text-green-400";
+            } else {
+                systemStatus.textContent = "AUDIT COMPLETE";
+                systemStatus.className = "font-semibold text-sm text-blue-400";
+                statusDetail.textContent = detail;
+                terminalStatus.textContent = "CHECKED";
+                terminalStatus.className = "text-[10px] uppercase tracking-widest text-blue-400";
+                finalStatus.textContent = "CHECKED";
+                finalStatus.className = "text-xl font-bold text-blue-400";
+                healthDot.className = "w-2 h-2 rounded-full bg-slate-500";
+                healthText.textContent = "Not launched";
+                healthText.className = "font-semibold text-sm text-slate-400";
+                afterService.textContent = "Not launched";
+                afterService.className = "text-slate-400";
+                afterHealth.textContent = "Not checked";
+                afterHealth.className = "text-slate-400";
+            }
         } else {
             setFailedState(detail);
         }
@@ -2648,6 +2665,54 @@
             activeSocket.close();
         }
         activeSocket = null;
+    }
+
+
+    function showCommandApproval(message) {
+        const card = document.createElement("div");
+        card.className = "my-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4";
+
+        const heading = document.createElement("div");
+        heading.className = "mb-2 text-sm font-semibold text-yellow-300";
+        heading.textContent = "Persetujuan diperlukan";
+
+        const reason = document.createElement("p");
+        reason.className = "mb-3 text-xs text-slate-300";
+        reason.textContent = message.reason || "Agent meminta menjalankan command ini.";
+
+        const command = document.createElement("pre");
+        command.className = "mb-4 overflow-x-auto rounded-md bg-black/40 p-3 font-mono text-xs text-white";
+        command.textContent = message.command || "Command kosong";
+
+        const actions = document.createElement("div");
+        actions.className = "flex gap-2";
+
+        const approveButton = document.createElement("button");
+        approveButton.className = "rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white hover:bg-green-500";
+        approveButton.textContent = "Setujui dan jalankan";
+
+        const rejectButton = document.createElement("button");
+        rejectButton.className = "rounded-md border border-border bg-panel2 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800";
+        rejectButton.textContent = "Tolak";
+
+        const respond = approved => {
+            if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return;
+            approveButton.disabled = true;
+            rejectButton.disabled = true;
+            activeSocket.send(JSON.stringify({
+                action: "approval_response",
+                request_id: message.request_id,
+                approved,
+            }));
+            card.classList.add("opacity-50");
+        };
+
+        approveButton.addEventListener("click", () => respond(true));
+        rejectButton.addEventListener("click", () => respond(false));
+        actions.append(approveButton, rejectButton);
+        card.append(heading, reason, command, actions);
+        activityContainer.appendChild(card);
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
 
@@ -2690,6 +2755,8 @@
 
             if (message.type === "terminal_log") {
                 addTerminalLine(message.isError ? "error" : "info", message.content || "");
+            } else if (message.type === "approval_required") {
+                showCommandApproval(message);
             } else if (message.type === "agent_thought") {
                 const title = message.title || "Agent update";
                 const type = message.status === "failed"
@@ -2709,7 +2776,7 @@
                 const detail = message.content || (success
                     ? "Provisioning selesai."
                     : "Proses gagal. Periksa detail error di atas.");
-                finishAgent(success, detail);
+                finishAgent(success, detail, message.service_started === true);
             }
         };
         activeSocket.onclose = () => {
@@ -2981,7 +3048,7 @@
                 />
             </svg>
 
-            Start Provisioning
+            Check Environment
         `;
 
 

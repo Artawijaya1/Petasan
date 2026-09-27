@@ -39,19 +39,27 @@ async def create_installation_plan(found_files: dict[str, str]) -> dict:
 
     prompt = f"""
     Kamu adalah DevOps Architect Agent.
-    Berdasarkan isi file repository berikut, buat rencana instalasi berupa JSON array of commands.
+    Berdasarkan manifest repository yang diberikan, buat rencana setup environment.
+    User harus menyetujui setiap command sebelum command dijalankan.
+    Jangan membuat manifest atau menyarankan npm init.
     
     File yang ditemukan:
     {json.dumps(found_files, indent=2)}
 
     Format Output Harus Berupa JSON Valid:
     {{
-      "env_needed": true,
-      "commands": [
-        "npm install",
-        "npm run dev"
-      ]
+            "commands": ["npm install"],
+            "start_command": "npm run dev -- --host 0.0.0.0",
+            "port": 5173
     }}
+
+        Aturan:
+        - Gunakan hanya package manager yang cocok dengan manifest yang ada.
+        - Jangan mengusulkan install jika manifest dependency terkait tidak ditemukan.
+        - Jangan menyalin atau membuat file .env; cukup laporkan jika template disebut.
+        - Pisahkan command install/build dari start_command yang menjaga server tetap hidup.
+        - start_command harus null jika manifest tidak mendefinisikan aplikasi yang bisa dijalankan.
+        - Port harus berasal dari konfigurasi project; Vite biasanya 5173 dan Next.js biasanya 3000.
 
     Balas HANYA dengan JSON valid, tanpa teks tambahan apapun.
     """

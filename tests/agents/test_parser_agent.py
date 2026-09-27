@@ -34,25 +34,34 @@ def _make_gemini_response(text: str) -> MagicMock:
 class TestCreateInstallationPlan:
     @pytest.mark.asyncio
     async def test_returns_plan_dict_on_success(self) -> None:
-        """Harus mengembalikan dict dengan env_needed dan commands pada respons valid."""
+        """Harus mengembalikan setup command dan start command terpisah."""
         from agents.parser_agent import create_installation_plan
 
-        plan = {"env_needed": False, "commands": ["npm install", "npm run dev"]}
+        plan = {
+            "commands": ["npm install"],
+            "start_command": "npm run dev -- --host 0.0.0.0",
+            "port": 5173,
+        }
         mock_response = _make_gemini_response(json.dumps(plan))
 
         with patch("agents.parser_agent._client") as mock_client:
             mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             result = await create_installation_plan({"package.json": '{"name": "app"}'})
 
-        assert result["env_needed"] is False
-        assert result["commands"] == ["npm install", "npm run dev"]
+        assert result["commands"] == ["npm install"]
+        assert result["start_command"] == "npm run dev -- --host 0.0.0.0"
+        assert result["port"] == 5173
 
     @pytest.mark.asyncio
     async def test_files_included_in_prompt(self) -> None:
         """Isi file harus dikirim ke Gemini sebagai bagian dari prompt."""
         from agents.parser_agent import create_installation_plan
 
-        plan = {"env_needed": True, "commands": ["pip install -r requirements.txt"]}
+        plan = {
+            "commands": ["pip install -r requirements.txt"],
+            "start_command": None,
+            "port": None,
+        }
         mock_response = _make_gemini_response(json.dumps(plan))
         captured = []
 
@@ -66,6 +75,8 @@ class TestCreateInstallationPlan:
 
         assert "requirements.txt" in captured[0]
         assert "fastapi" in captured[0]
+        assert "Jangan membuat manifest" in captured[0]
+        assert "jangan membuat manifest" in captured[0].lower()
 
     @pytest.mark.asyncio
     async def test_raises_runtime_error_on_api_exception(self) -> None:
@@ -113,7 +124,7 @@ class TestScanRepository:
     async def test_reads_files_and_calls_create_plan(self) -> None:
         from agents.parser_agent import scan_repository
 
-        plan = {"env_needed": False, "commands": ["npm install"]}
+        plan = {"commands": ["npm install"], "start_command": None, "port": None}
         mock_response = _make_gemini_response(json.dumps(plan))
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -130,7 +141,7 @@ class TestScanRepository:
     async def test_returns_empty_plan_for_empty_directory(self) -> None:
         from agents.parser_agent import scan_repository
 
-        plan = {"env_needed": False, "commands": []}
+        plan = {"commands": [], "start_command": None, "port": None}
         mock_response = _make_gemini_response(json.dumps(plan))
 
         with tempfile.TemporaryDirectory() as tmp_dir:
