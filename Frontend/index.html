@@ -3156,8 +3156,11 @@
         addTerminalLine("info", `Connecting to backend for ${repoUrl}...`);
         setRunningState();
 
-        const socketUrl = new URL("/ws/agent", backendBaseUrl);
-        socketUrl.protocol = socketUrl.protocol === "https:" ? "wss:" : "ws:";
+        const socketUrl = new URL(backendBaseUrl);
+        socketUrl.pathname = "/ws/agent";
+        socketUrl.protocol = socketUrl.protocol === "https:" || socketUrl.protocol === "wss:"
+            ? "wss:"
+            : "ws:";
         activeSocket = new WebSocket(socketUrl);
         activeSocket.onopen = () => {
             addTerminalLine("success", "Backend connection established.");

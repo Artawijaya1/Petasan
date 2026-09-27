@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => {
       {
         name: 'zeto-backend-url',
         transformIndexHtml(html) {
-                  return html.replace('__ZETO_BACKEND_URL__', env.VITE_BACKEND_URL || '')
-                },
+          const backendUrl = env.VITE_BACKEND_WS_URL || env.VITE_BACKEND_URL || ''
+          return html.replace('__ZETO_BACKEND_URL__', backendUrl)
+        },
       },
     ],
     server: {
