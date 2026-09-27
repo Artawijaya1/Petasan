@@ -11,7 +11,9 @@ export default defineConfig(({ mode }) => {
       {
         name: 'zeto-backend-url',
         transformIndexHtml(html) {
-          const backendUrl = env.VITE_BACKEND_WS_URL || env.VITE_BACKEND_URL || ''
+          const backendUrl = env.VITE_BACKEND_WS_URL
+            || env.VITE_BACKEND_URL
+            || 'https://petasan-production.up.railway.app'
           return html.replace('__ZETO_BACKEND_URL__', backendUrl)
         },
       },
