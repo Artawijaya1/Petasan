@@ -9,19 +9,23 @@ description = "Zero-Touch Environment Provisioner - Local Agent CLI"
 requires-python = ">=3.10"
 dependencies = [
     "openai>=1.0",
-    "websockets>=12.0",
     "httpx>=0.27",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-dotenv>=1.0",
+    "pydantic>=2.0",
     "numpy>=1.26",
-    "sentence-transformers>=3.0",
 ]
 
 [project.scripts]
-zero-touch-agent = "main:cli_entry"
+zero-touch-agent = "cli_runner:main_sync"
 
 [tool.hatch.build.targets.wheel]
 include = [
     "main.py",
-    "runner.py",
+    "cli_runner.py",
+    "orchestrator.py",
+    "agents_client.py",
     "agents/**",
     "rag/**",
 ]
