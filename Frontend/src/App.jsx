@@ -38,17 +38,17 @@ function App() {
   const runLabel = RUN_STATUS_LABELS[runStatus]
 
   return (
-    <div className="app-shell">
-      <Header
-        connectionState={connectionState}
-        connectionLabel={connectionLabel}
-        onReconnect={reconnect}
-      />
+      <div className="app-shell">
+        <Header
+          connectionState={connectionState}
+          connectionLabel={connectionLabel}
+          onReconnect={reconnect}
+        />
 
-      <main id="top">
-        <Intro backendUrl={BACKEND_WS_URL} />
+        <main id="top">
+          <Intro backendUrl={BACKEND_WS_URL} />
 
-        <section className="workspace" aria-label="Kontrol agent dan aktivitas">
+          <section className="workspace" aria-label="Agent control and activity">
           <ControlPanel
             repoPath={repoPath}
             setRepoPath={setRepoPath}

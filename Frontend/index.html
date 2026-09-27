@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="petasan-backend-url" content="__PETASAN_BACKEND_URL__">
+    <meta name="zeto-backend-url" content="__ZETO_BACKEND_URL__">
 
-    <title>BOB 2.0 — Zero-Touch Provisioner</title>
+    <title>ZETO — Zero-Touch Environment Provisioner</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -821,19 +821,19 @@
           <div class="w-2 h-2 rounded-sm bg-sky-400"></div>
         </div>
         <div class="flex items-center gap-2">
-          <span class="font-medium text-sm tracking-tight text-white">Petasan</span>
-          <span class="text-[11px] font-mono text-zinc-400 px-1.5 py-0.2 rounded border border-white/[0.08] bg-white/[0.02]">v2.0</span>
+                  <span class="font-medium text-sm tracking-tight text-white">Zeto</span>
+                  <span class="text-[11px] font-mono text-zinc-400 px-1.5 py-0.2 rounded border border-white/[0.08] bg-white/[0.02]">v2.0</span>
         </div>
       </div>
 
       <nav class="hidden md:flex items-center gap-7 text-xs font-medium text-zinc-400">
-        <a href="#capabilities" class="nav-link">Kapabilitas</a>
-        <a href="#pipeline" class="nav-link">Alur Kerja</a>
-        <a href="#architecture" class="nav-link">Arsitektur</a>
+        <a href="#capabilities" class="nav-link">Capabilities</a>
+        <a href="#pipeline" class="nav-link">Workflow</a>
+        <a href="#architecture" class="nav-link">Architecture</a>
       </nav>
 
       <button class="launch-app-btn btn-pill-primary text-xs !py-1.5 !px-3.5 group cursor-pointer">
-        <span>Buka Dashboard</span>
+        <span>Open Dashboard</span>
         <svg class="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
         </svg>
@@ -850,28 +850,28 @@
         
         <!-- Status Pill (21st.dev style) -->
         <div class="glass-pill mb-3">
-          <span class="text-zinc-200 font-medium text-[11px]">IBM Bob 2.0</span>
+          <span class="text-zinc-200 font-medium text-[11px]">AI Environment Provisioner</span>
         </div>
 
         <h1 class="text-4xl sm:text-6xl lg:text-[4.1rem] font-medium tracking-[-0.035em] text-white leading-[1.08] mb-6">
           Zero-touch provisioning<br>
-          <span class="text-zinc-400 font-normal">dengan auto-healing mandiri.</span>
+          <span class="text-zinc-400 font-normal">with autonomous self-healing.</span>
         </h1>
 
         <p class="text-base sm:text-[17px] text-zinc-400 font-normal leading-relaxed max-w-lg mb-8">
-          Petasan memindai repositori Anda, mengorkestrasi eksekusi dependensi, dan mereparasi error runtime secara otonom menggunakan model kognitif IBM Bob dan memori vektor RAG.
-        </p>
+                  Zeto scans your repository, orchestrates dependency execution, and autonomously repairs runtime errors using cognitive AI and local vector RAG memory.
+                </p>
 
         <!-- Action Buttons (Minimalist Pill with tactile spring) -->
         <div class="flex flex-wrap items-center gap-3.5 mb-12">
           <button class="launch-app-btn btn-pill-primary group cursor-pointer">
-            <span>Buka Dashboard</span>
+            <span>Open Dashboard</span>
             <svg class="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
             </svg>
           </button>
           <a href="#pipeline" class="btn-pill-glass group">
-            <span>Lihat Alur Kerja</span>
+            <span>Explore Workflow</span>
             <svg class="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-all duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -881,15 +881,15 @@
         <!-- Telemetry Spec Bar (Clean Minimalist) -->
         <div class="w-full pt-6 border-t border-white/[0.08] grid grid-cols-3 gap-6 text-xs">
           <div>
-            <div class="text-zinc-500 font-mono text-[11px] mb-1">Model Inferensi</div>
-            <div class="text-zinc-200 font-medium">IBM Bob Inference</div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Inference Model</div>
+            <div class="text-zinc-200 font-medium">Cognitive AI Agent</div>
           </div>
           <div>
-            <div class="text-zinc-500 font-mono text-[11px] mb-1">Memori Perbaikan</div>
-            <div class="text-zinc-200 font-medium">Vector RAG Store</div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Healing Memory</div>
+            <div class="text-zinc-200 font-medium">Local Vector RAG</div>
           </div>
           <div>
-            <div class="text-zinc-500 font-mono text-[11px] mb-1">Stream Log</div>
+            <div class="text-zinc-500 font-mono text-[11px] mb-1">Log Stream</div>
             <div class="text-zinc-200 font-medium">FastAPI WebSocket</div>
           </div>
         </div>
@@ -906,7 +906,7 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
                 <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
               </div>
-              <span class="font-mono text-xs text-zinc-300 ml-2">petasan-agent // telemetry</span>
+              <span class="font-mono text-xs text-zinc-300 ml-2">zeto-agent // telemetry</span>
             </div>
             <div class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -961,11 +961,11 @@
     </div>
   </section>
 
-  <!-- Section: Kapabilitas Inti (Glass Bento Grid) -->
+  <!-- Section: Core Capabilities (Glass Bento Grid) -->
   <section id="capabilities" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
     <div class="max-w-xl mb-14 scroll-reveal">
-      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Kapabilitas Inti</h2>
-      <p class="text-sm text-zinc-400 leading-relaxed">Tiga modul otonom yang bekerja bersama untuk menyediakan environment terverifikasi.</p>
+      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Core Capabilities</h2>
+      <p class="text-sm text-zinc-400 leading-relaxed">Three autonomous modules collaborating to deliver verified, ready-to-run environments.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -976,9 +976,9 @@
           <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 mb-5">
             Parser Agent
           </div>
-          <h3 class="text-lg font-medium text-white mb-2">Deteksi Stack Otomatis</h3>
+          <h3 class="text-lg font-medium text-white mb-2">Automated Stack Discovery</h3>
           <p class="text-sm text-zinc-400 leading-relaxed">
-            Menganalisis file konfigurasi seperti package.json, Dockerfile, requirements.txt, dan template .env untuk menyusun urutan eksekusi instalasi tanpa intervensi manusia.
+            Analyzes configuration files such as package.json, Dockerfile, requirements.txt, and .env templates to construct optimal installation execution plans without manual intervention.
           </p>
         </div>
         <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
@@ -993,14 +993,14 @@
           <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 mb-5">
             RAG Kernel
           </div>
-          <h3 class="text-lg font-medium text-white mb-2">Auto-Healing Kognitif</h3>
+          <h3 class="text-lg font-medium text-white mb-2">Cognitive Auto-Healing</h3>
           <p class="text-sm text-zinc-400 leading-relaxed">
-            Ketika eksekusi mengalami error runtime (exit code != 0), log stderr dicocokkan dengan vector store RAG dan model IBM Bob untuk mengeksekusi perbaikan otomatis hingga 3 kali percobaan.
+            When execution encounters runtime errors (exit code != 0), stderr logs are matched against local vector RAG memory and cognitive AI to execute targeted fixes across up to 3 retry attempts.
           </p>
         </div>
         <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
-          <span>Retri perbaikan</span>
-          <span class="text-zinc-400">3 kali maksimal</span>
+          <span>Remediation retries</span>
+          <span class="text-zinc-400">Up to 3 attempts</span>
         </div>
       </div>
 
@@ -1010,41 +1010,39 @@
           <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 mb-5">
             Health Agent
           </div>
-          <h3 class="text-lg font-medium text-white mb-2">Probe Verifikasi Layanan</h3>
+          <h3 class="text-lg font-medium text-white mb-2">Service Health Verification</h3>
           <p class="text-sm text-zinc-400 leading-relaxed">
-            Memverifikasi ketersediaan aplikasi lokal secara non-blocking via HTTP ping berkala ke port target. Memastikan kode status HTTP 200 sebelum menyatakan kesiapan demo.
+            Non-blockingly verifies application availability via periodic HTTP pings to the detected port, confirming an HTTP 200 OK status before declaring deployment readiness.
           </p>
         </div>
         <div class="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500 font-mono">
-          <span>Probe aktif</span>
-          <span class="text-zinc-400">Cek HTTP 200</span>
+          <span>Active probe</span>
+          <span class="text-zinc-400">HTTP 200 check</span>
         </div>
       </div>
 
     </div>
   </section>
 
-  <!-- Section: Alur Eksekusi (Pipeline dengan konektor visual) -->
+  <!-- Section: Execution Pipeline -->
   <section id="pipeline" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
     <div class="max-w-xl mb-14 scroll-reveal">
-      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Alur Eksekusi</h2>
-      <p class="text-sm text-zinc-400 leading-relaxed">Tiga tahapan sekuensial dari input repository hingga verifikasi layanan aktif.</p>
+      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Execution Pipeline</h2>
+      <p class="text-sm text-zinc-400 leading-relaxed">Three sequential stages from repository input to verified service readiness.</p>
     </div>
 
-    <!-- Pipeline dengan konektor horizontal -->
+    <!-- Pipeline with horizontal connectors -->
     <div class="relative">
-      <!-- Konektor garis horizontal -->
       <div class="hidden md:block absolute top-1/2 left-[calc(16.67%+80px)] right-[calc(16.67%+80px)] h-px bg-gradient-to-r from-white/[0.08] via-white/[0.15] to-white/[0.08]"></div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
       
         <div class="glass-panel p-7 relative scroll-reveal delay-100">
           <div class="font-mono text-xs text-zinc-500 mb-3">01 // Discovery</div>
-          <h3 class="text-base font-medium text-white mb-2">Input Repository</h3>
+          <h3 class="text-base font-medium text-white mb-2">Repository Ingestion</h3>
           <p class="text-xs text-zinc-400 leading-relaxed">
-            Masukkan path folder proyek lokal di konsol antarmuka. Parser langsung memetakan dependensi yang diperlukan.
+            Provide the GitHub repository URL in the console. The system clones into an isolated workspace and automatically parses all dependency manifests.
           </p>
-          <!-- Panah kanan -->
           <div class="hidden md:block absolute right-[-24px] top-1/2 -translate-y-1/2 text-zinc-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
@@ -1054,9 +1052,9 @@
 
         <div class="glass-panel p-7 relative scroll-reveal delay-200">
           <div class="font-mono text-xs text-zinc-500 mb-3">02 // Orchestration</div>
-          <h3 class="text-base font-medium text-white mb-2">Eksekusi Terawasi</h3>
+          <h3 class="text-base font-medium text-white mb-2">Supervised Execution</h3>
           <p class="text-xs text-zinc-400 leading-relaxed">
-            Backend menjalankan subprocess shell secara asinkron, streaming log ke WebSocket, dan memanggil Auto-Healing jika terjadi kegagalan.
+            The backend executes commands asynchronously with explicit user approvals, streams real-time terminal logs, and triggers Auto-Healing upon failure.
           </p>
           <div class="hidden md:block absolute right-[-24px] top-1/2 -translate-y-1/2 text-zinc-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1067,9 +1065,9 @@
 
         <div class="glass-panel p-7 relative scroll-reveal delay-300">
           <div class="font-mono text-xs text-zinc-500 mb-3">03 // Verification</div>
-          <h3 class="text-base font-medium text-white mb-2">Sistem Terverifikasi</h3>
+          <h3 class="text-base font-medium text-white mb-2">Verified Deployment</h3>
           <p class="text-xs text-zinc-400 leading-relaxed">
-            Probe mendeteksi respons HTTP 200 dari port lokal. Sistem mengumumkan kesiapan penuh tanpa konfigurasi manual.
+            Automated probes confirm HTTP 200 responses on the target port. The system signals complete readiness without manual configuration.
           </p>
         </div>
 
@@ -1077,11 +1075,11 @@
     </div>
   </section>
 
-  <!-- Section: Arsitektur Sistem -->
+  <!-- Section: System Architecture -->
   <section id="architecture" class="relative z-10 py-24 px-6 lg:px-10 max-w-7xl mx-auto border-t border-white/[0.06]">
     <div class="max-w-xl mb-14 scroll-reveal">
-      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">Arsitektur Sistem</h2>
-      <p class="text-sm text-zinc-400 leading-relaxed">Topologi microservice modular yang saling terhubung melalui REST dan WebSocket aman.</p>
+      <h2 class="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-3">System Architecture</h2>
+      <p class="text-sm text-zinc-400 leading-relaxed">Modular microservices topology interconnected via REST and secure WebSocket channels.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1090,11 +1088,11 @@
           <span class="text-xs font-mono text-sky-400 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20">:5173</span>
           <span class="text-[11px] font-mono text-zinc-500">Client</span>
         </div>
-        <h3 class="text-base font-medium text-white mb-2">Klien Frontend</h3>
+        <h3 class="text-base font-medium text-white mb-2">Frontend Client</h3>
         <p class="text-xs text-zinc-400 leading-relaxed mb-4">
-          Dashboard antarmuka pengguna real-time berbasis React dan Vite untuk memantau stream log dan status reasoning agent.
+          Real-time user interface dashboard built with React, Vite, and Tailwind CSS for log streaming, approval prompts, and agent reasoning observation.
         </p>
-        <div class="text-[11px] font-mono text-zinc-500">React + Tailwind</div>
+        <div class="text-[11px] font-mono text-zinc-500">React + Tailwind CSS</div>
       </div>
 
       <div class="glass-panel p-7 scroll-reveal delay-200">
@@ -1102,9 +1100,9 @@
           <span class="text-xs font-mono text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">:8000</span>
           <span class="text-[11px] font-mono text-zinc-500">Gateway</span>
         </div>
-        <h3 class="text-base font-medium text-white mb-2">Orkestrator Backend</h3>
+        <h3 class="text-base font-medium text-white mb-2">Backend Orchestrator</h3>
         <p class="text-xs text-zinc-400 leading-relaxed mb-4">
-          FastAPI Gateway yang mengeksekusi shell process lokal, menangani koneksi WebSocket, dan mengelola polling health check.
+          FastAPI Gateway executing subprocesses in isolated workspaces, managing WebSocket communication, and orchestrating health verification.
         </p>
         <div class="text-[11px] font-mono text-zinc-500">Python FastAPI + AsyncIO</div>
       </div>
@@ -1112,13 +1110,13 @@
       <div class="glass-panel p-7 scroll-reveal delay-300">
         <div class="flex items-center justify-between mb-4">
           <span class="text-xs font-mono text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">:8001</span>
-          <span class="text-[11px] font-mono text-zinc-500">Kognitif</span>
+          <span class="text-[11px] font-mono text-zinc-500">Cognitive AI</span>
         </div>
-        <h3 class="text-base font-medium text-white mb-2">Agent Kognitif &amp; RAG</h3>
+        <h3 class="text-base font-medium text-white mb-2">Cognitive Agents &amp; RAG</h3>
         <p class="text-xs text-zinc-400 leading-relaxed mb-4">
-          Microservice inferensi cerdas yang ditenagai IBM Bob model dan vector store embedding untuk diagnosis otomatis.
+          Intelligent inference service powered by cognitive AI and local vector store embeddings for automated parsing and self-healing.
         </p>
-        <div class="text-[11px] font-mono text-zinc-500">IBM Bob API + Vector Store</div>
+        <div class="text-[11px] font-mono text-zinc-500">Agents API + Vector Store</div>
       </div>
     </div>
   </section>
@@ -1127,13 +1125,13 @@
   <section class="relative z-10 py-24 px-6 lg:px-10 max-w-5xl mx-auto text-center border-t border-white/[0.06]">
     <div class="glass-panel p-12 sm:p-16 text-center relative overflow-hidden scroll-reveal">
       <h2 class="text-2xl sm:text-4xl font-medium tracking-tight text-white mb-4">
-        Siap menjalankan provisioning otomatis?
+        Ready for Zero-Touch Provisioning?
       </h2>
       <p class="text-zinc-400 text-sm sm:text-base max-w-md mx-auto mb-8 font-normal">
-        Buka konsol dashboard dan mulai eksekusi setup proyek Anda dalam hitungan detik.
+        Launch the agent console and begin executing your project setup in seconds.
       </p>
       <button class="launch-app-btn btn-pill-primary mx-auto">
-        <span>Buka Dashboard</span>
+        <span>Open Dashboard</span>
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
         </svg>
@@ -1143,8 +1141,8 @@
 
   <!-- Footer -->
   <footer class="relative z-10 border-t border-white/[0.06] py-8 px-6 lg:px-10 text-center font-mono text-xs text-zinc-500">
-    PETASAN // IBM BOB 2.0 ZERO-TOUCH PROVISIONER
-  </footer>
+      ZETO // ZERO-TOUCH ENVIRONMENT PROVISIONER
+    </footer>
 
 </div>
 
@@ -1187,17 +1185,17 @@
 
                     <div class="flex items-center gap-2">
 
-                        <h1 class="font-bold tracking-tight">
-                            BOB 2.0
-                        </h1>
+                                            <h1 class="font-bold tracking-tight">
+                                                ZETO
+                                            </h1>
 
-                        <span class="text-slate-600">/</span>
+                                            <span class="text-slate-600">/</span>
 
-                        <span class="text-sm text-slate-400">
-                            Zero-Touch Provisioner
-                        </span>
+                                            <span class="text-sm text-slate-400">
+                                                Zero-Touch Provisioner
+                                            </span>
 
-                    </div>
+                                        </div>
 
                     <div class="text-[11px] font-mono text-slate-500">
                         AI-powered development environment automation
@@ -1232,7 +1230,7 @@
                 <button
                     id="back-to-landing-btn"
                     class="h-10 px-3 rounded-lg border border-border bg-panel2 hover:bg-panel text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                    title="Kembali ke Landing Page"
+                    title="Back to Landing Page"
                 >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -1308,7 +1306,7 @@
                     </div>
 
                     <label for="repo-url" class="block text-xs text-slate-400 mb-2">
-                        URL repository GitHub
+                        GitHub repository URL
                     </label>
                     <input
                         id="repo-url"
@@ -1319,7 +1317,7 @@
                         class="w-full rounded-md border border-border bg-panel2 px-2 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:border-blue-400 focus:outline-none"
                     >
                     <p class="mt-2 text-[10px] leading-relaxed text-slate-500">
-                        Repository publik, atau kredensial Git sudah tersedia di host Backend.
+                        Public repository or host with configured Git credentials.
                     </p>
 
                 </div>
@@ -1511,17 +1509,17 @@
                     >
 
                         <div class="text-slate-500 terminal-line">
-                            BOB 2.0 — AI Environment Provisioner
-                        </div>
+                                                    ZETO — AI Environment Provisioner
+                                                </div>
 
-                        <div class="text-slate-600 terminal-line">
-                            Build environment automation system
-                        </div>
+                                                <div class="text-slate-600 terminal-line">
+                                                    Build environment automation system
+                                                </div>
 
-                        <div class="mt-5 text-blue-400 terminal-line">
-                            <span class="prompt">❯</span>
-                            <span class="command">bob-agent provision --target .</span>
-                        </div>
+                                                <div class="mt-5 text-blue-400 terminal-line">
+                                                                            <span class="prompt">❯</span>
+                                                                            <span class="command">zeto-agent provision --target .</span>
+                                                                        </div>
 
                         <div class="mt-3 text-slate-500 terminal-line">
                             Awaiting provisioning request...
@@ -2388,7 +2386,7 @@
     const startBtn = document.getElementById("start-btn");
     const resetBtn = document.getElementById("reset-btn");
     const repoUrlInput = document.getElementById("repo-url");
-    const backendUrlValue = document.querySelector('meta[name="petasan-backend-url"]')?.content.trim();
+    const backendUrlValue = document.querySelector('meta[name="zeto-backend-url"]')?.content.trim();
     const backendBaseUrl = backendUrlValue && !backendUrlValue.startsWith("%")
         ? backendUrlValue
         : window.location.origin;
@@ -3029,7 +3027,7 @@
         statusDot.className = "w-2 h-2 rounded-full bg-red-500";
         systemStatus.textContent = "FAILED";
         systemStatus.className = "font-semibold text-sm text-red-400";
-        statusDetail.textContent = detail || "Provisioning gagal";
+        statusDetail.textContent = detail || "Provisioning failed";
         terminalStatus.textContent = "FAILED";
         terminalStatus.className = "text-[10px] uppercase tracking-widest text-red-400";
         terminalLive.classList.add("hidden");
@@ -3095,26 +3093,26 @@
 
         const heading = document.createElement("div");
         heading.className = "mb-2 text-sm font-semibold text-yellow-300";
-        heading.textContent = "Persetujuan diperlukan";
+        heading.textContent = "Approval Required";
 
         const reason = document.createElement("p");
         reason.className = "mb-3 text-xs text-slate-300";
-        reason.textContent = message.reason || "Agent meminta menjalankan command ini.";
+        reason.textContent = message.reason || "Agent is requesting permission to execute this command.";
 
         const command = document.createElement("pre");
         command.className = "mb-4 overflow-x-auto rounded-md bg-black/40 p-3 font-mono text-xs text-white";
-        command.textContent = message.command || "Command kosong";
+        command.textContent = message.command || "Empty command";
 
         const actions = document.createElement("div");
         actions.className = "flex gap-2";
 
         const approveButton = document.createElement("button");
         approveButton.className = "rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white hover:bg-green-500";
-        approveButton.textContent = "Setujui dan jalankan";
+        approveButton.textContent = "Approve & Execute";
 
         const rejectButton = document.createElement("button");
         rejectButton.className = "rounded-md border border-border bg-panel2 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800";
-        rejectButton.textContent = "Tolak";
+        rejectButton.textContent = "Reject";
 
         const respond = approved => {
             if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return;
@@ -3143,7 +3141,7 @@
         const repoUrl = repoUrlInput.value.trim();
         if (!repoUrl) {
             emptyState.classList.add("hidden");
-            addActivity({ type: "error", title: "URL GitHub diperlukan", description: "Masukkan URL repository GitHub, misalnya https://github.com/owner/repository." });
+            addActivity({ type: "error", title: "GitHub URL Required", description: "Please enter a valid GitHub repository URL, e.g. https://github.com/owner/repository." });
             repoUrlInput.focus();
             return;
         }
@@ -3155,14 +3153,14 @@
         emptyState.classList.add("hidden");
         activityContainer.innerHTML = "";
         clearTerminal();
-        addTerminalLine("info", `Menghubungkan ke backend untuk ${repoUrl}...`);
+        addTerminalLine("info", `Connecting to backend for ${repoUrl}...`);
         setRunningState();
 
         const socketUrl = new URL("/ws/agent", backendBaseUrl);
         socketUrl.protocol = socketUrl.protocol === "https:" ? "wss:" : "ws:";
         activeSocket = new WebSocket(socketUrl);
         activeSocket.onopen = () => {
-            addTerminalLine("success", "Koneksi backend tersambung.");
+            addTerminalLine("success", "Backend connection established.");
             activeSocket.send(JSON.stringify({ action: "start", repo_url: repoUrl }));
         };
         activeSocket.onmessage = event => {
@@ -3170,7 +3168,7 @@
             try {
                 message = JSON.parse(event.data);
             } catch {
-                addTerminalLine("error", "Backend mengirim pesan yang tidak valid.");
+                addTerminalLine("error", "Backend sent an invalid message.");
                 return;
             }
 
@@ -3182,28 +3180,28 @@
                 const title = message.title || "Agent update";
                 const type = message.status === "failed"
                     ? "error"
-                    : /heal|perbaikan/i.test(title)
+                    : /heal|remediation|fix/i.test(title)
                         ? "heal"
                         : message.status === "completed"
                             ? "success"
                             : "info";
                 addActivity({ type, title, description: message.content || "" });
             } else if (message.type === "agent_error") {
-                const detail = message.content || "Backend melaporkan error tanpa detail. Periksa log terminal.";
+                const detail = message.content || "Backend reported an unspecified error. Check terminal logs.";
                 addTerminalLine("error", detail);
                 addActivity({ type: "error", title: "Backend error", description: detail });
             } else if (message.type === "agent_complete") {
                 const success = message.status === "completed";
                 const detail = message.content || (success
-                    ? "Provisioning selesai."
-                    : "Proses gagal. Periksa detail error di atas.");
+                    ? "Provisioning completed."
+                    : "Process failed. Check the error details above.");
                 finishAgent(success, detail, message.service_started === true);
             }
         };
         activeSocket.onclose = () => {
             if (isRunning) {
-                addActivity({ type: "error", title: "Koneksi backend terputus", description: "Proses berhenti sebelum backend mengirim status selesai." });
-                finishAgent(false, "Koneksi backend terputus");
+                addActivity({ type: "error", title: "Backend Connection Closed", description: "Process stopped before backend reported completion." });
+                finishAgent(false, "Backend connection lost");
             }
         };
     }
@@ -3485,19 +3483,19 @@
         terminalOutput.innerHTML = `
 
             <div class="text-slate-500 terminal-line">
-                BOB 2.0 — AI Environment Provisioner
-            </div>
+                            ZETO — AI Environment Provisioner
+                        </div>
 
-            <div class="text-slate-600 terminal-line">
-                Build environment automation system
-            </div>
+                        <div class="text-slate-600 terminal-line">
+                            Build environment automation system
+                        </div>
 
-            <div class="mt-5 text-blue-400 terminal-line">
-                <span class="prompt">❯</span>
-                <span class="command">
-                    bob-agent provision --target .
-                </span>
-            </div>
+                        <div class="mt-5 text-blue-400 terminal-line">
+                                        <span class="prompt">❯</span>
+                                        <span class="command">
+                                            zeto-agent provision --target .
+                                        </span>
+                                    </div>
 
             <div class="mt-3 text-slate-500 terminal-line">
                 Awaiting provisioning request...

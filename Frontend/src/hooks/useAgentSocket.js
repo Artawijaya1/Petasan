@@ -68,15 +68,15 @@ export function useAgentSocket(backendUrl) {
   }, [])
 
   const startProvisioning = useCallback((repoPath, trusted) => {
-    const socket = socketRef.current
-    if (!repoPath.trim() || !trusted || socket?.readyState !== WebSocket.OPEN) return
+      const socket = socketRef.current
+      if (!repoPath.trim() || !trusted || socket?.readyState !== WebSocket.OPEN) return
 
-    setEvents([])
-    setTerminalOutput(`PETASAN // ${repoPath.trim()}\nMemulai sesi agent...\n`)
-    setIsRunning(true)
-    setRunStatus('running')
-    socket.send(JSON.stringify({ action: 'start', repo_path: repoPath.trim() }))
-  }, [])
+      setEvents([])
+      setTerminalOutput(`ZETO // ${repoPath.trim()}\nStarting agent session...\n`)
+      setIsRunning(true)
+      setRunStatus('running')
+      socket.send(JSON.stringify({ action: 'start', repo_path: repoPath.trim() }))
+    }, [])
 
   return {
     connectionState,

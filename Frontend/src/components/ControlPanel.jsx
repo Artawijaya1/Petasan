@@ -14,25 +14,25 @@ export function ControlPanel({
       <div className="section-heading">
         <span className="section-index">01</span>
         <div>
-          <h2>Mulai sesi</h2>
-          <p>Target harus dapat diakses oleh mesin backend.</p>
+          <h2>Start Session</h2>
+          <p>Target must be accessible by the backend machine.</p>
         </div>
       </div>
 
       <form onSubmit={onSubmit}>
-        <label htmlFor="repo-path">Path direktori proyek</label>
+        <label htmlFor="repo-path">Project directory path</label>
         <input
           id="repo-path"
           name="repoPath"
           type="text"
           autoComplete="off"
           spellCheck="false"
-          placeholder="D:\\projects\\my-app"
+          placeholder="D:\projects\my-app"
           value={repoPath}
           onChange={(event) => setRepoPath(event.target.value)}
           disabled={isRunning}
         />
-        <p className="field-hint">Path lokal pada komputer/server yang menjalankan Backend.</p>
+        <p className="field-hint">Local path on the computer/server running the Backend.</p>
 
         <label className="trust-check">
           <input
@@ -41,7 +41,7 @@ export function ControlPanel({
             onChange={(event) => setTrusted(event.target.checked)}
             disabled={isRunning}
           />
-          <span>Saya mempercayai proyek ini dan mengizinkan perintah dijalankan.</span>
+          <span>I trust this project and authorize command execution.</span>
         </label>
 
         <button
@@ -50,13 +50,13 @@ export function ControlPanel({
           disabled={connectionState !== 'connected' || isRunning || !repoPath.trim() || !trusted}
         >
           <span aria-hidden="true">{isRunning ? '■' : '▶'}</span>
-          {isRunning ? 'Agent sedang bekerja' : 'Jalankan agent'}
+          {isRunning ? 'Agent working' : 'Run agent'}
         </button>
       </form>
 
       <div className="run-summary">
-        <span className={`status-dot run-${runStatus}`} />
-        <span>Sesi</span>
+        <span className={"status-dot run-" + runStatus} />
+        <span>Session</span>
         <strong>{runLabel}</strong>
       </div>
     </div>

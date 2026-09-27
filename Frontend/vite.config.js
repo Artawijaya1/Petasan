@@ -9,10 +9,10 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       {
-        name: 'petasan-backend-url',
+        name: 'zeto-backend-url',
         transformIndexHtml(html) {
-          return html.replace('__PETASAN_BACKEND_URL__', env.VITE_BACKEND_URL || '')
-        },
+                  return html.replace('__ZETO_BACKEND_URL__', env.VITE_BACKEND_URL || '')
+                },
       },
     ],
     server: {

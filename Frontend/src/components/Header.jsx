@@ -1,9 +1,9 @@
 export function Header({ connectionState, connectionLabel, onReconnect }) {
   return (
     <header className="topbar">
-      <a className="brand" href="#top" aria-label="Petasan dashboard">
-        <span className="brand-mark" aria-hidden="true">P</span>
-        <span>PETASAN <small>AGENT CONSOLE</small></span>
+      <a className="brand" href="#top" aria-label="Zeto dashboard">
+        <span className="brand-mark" aria-hidden="true">Z</span>
+        <span>ZETO <small>AGENT CONSOLE</small></span>
       </a>
       <div className="topbar-status">
         <span className={`status-dot ${connectionState}`} />
@@ -14,7 +14,7 @@ export function Header({ connectionState, connectionLabel, onReconnect }) {
             type="button"
             onClick={onReconnect}
           >
-            Sambungkan ulang
+            Reconnect
           </button>
         )}
       </div>
