@@ -85,6 +85,8 @@ async def main() -> None:
 
     await run_cli(repo_path)
 
+def main_sync() -> None:
+    asyncio.run(main())
 
 if __name__ == "__main__":
     asyncio.run(main())
