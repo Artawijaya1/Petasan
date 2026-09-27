@@ -1,8 +1,11 @@
-export const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8000'
+export const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080'
+
+// Menggunakan domain Backend Railway sebagai fallback utama
+const RAILWAY_HOST = 'petasan-production.up.railway.app'
 
 export const BACKEND_WS_URL =
   import.meta.env.VITE_BACKEND_WS_URL ||
-  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:${BACKEND_PORT}/ws/agent`
+  `wss://${RAILWAY_HOST}/ws/agent`
 
 export const INITIAL_TERMINAL_OUTPUT = 'ZETO // agent terminal\nAwaiting request...\n'
 
