@@ -1,9 +1,10 @@
+# Agents/cli_runner.py
 from __future__ import annotations
 
 import argparse
 import asyncio
-from importlib import import_module
 import sys
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,7 @@ async def request_command_approval(command: str, purpose: str) -> bool:
 
 
 async def run_cli(repo_path: Path) -> None:
+    # --- Import module dari Backend/, reuse logic yang sama dengan jalur Web ---
     backend_path = Path(__file__).resolve().parent.parent / "Backend"
     backend_path_text = str(backend_path)
     if backend_path_text not in sys.path:
@@ -59,16 +61,21 @@ async def run_cli(repo_path: Path) -> None:
             request_approval=request_command_approval,
         )
         if service_started:
-            print("\nAplikasi siap. Tekan Ctrl+C untuk menghentikan server dan membersihkan workspace.")
+            print("\nAplikasi siap. Tekan Ctrl+C untuk menghentikan server.")
+            print("(Folder project TIDAK akan dihapus — ini folder lokal asli Anda.)")
             await asyncio.Event().wait()
     except Exception as exc:
         print(f"[ERROR] Workflow CLI gagal: {exc}")
     finally:
-        await cleanup_target_processes()
+        # --- INI PENEMPATANNYA: cleanup_workspace=False ---
+        # Karena repo_path di CLI adalah folder ASLI milik user (bukan temp
+        # folder hasil clone seperti di jalur Web), folder ini TIDAK BOLEH
+        # dihapus. Cukup hentikan proses server yang berjalan di background.
+        await cleanup_target_processes(cleanup_workspace=False)
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Zero-Touch Provisioner — CLI mode")
+    parser = argparse.ArgumentParser(description="Zero-Touch Provisioner — CLI mode (lokal)")
     parser.add_argument("--repo-path", required=True, help="Path folder project di komputer ini")
     args = parser.parse_args()
 
