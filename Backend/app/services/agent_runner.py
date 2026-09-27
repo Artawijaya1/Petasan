@@ -111,15 +111,15 @@ async def _check_target_health(
 ) -> bool:
     await emit({
         "type": "agent_thought",
-        "title": "Application Health Check",
-        "content": f"Checking the local server at {target_url}...",
+        "title": "Service Verification (Health Check)",
+        "content": f"Verifying local server status at {target_url}...",
         "status": "in_progress",
     })
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         for attempt in range(1, max_retries + 1):
             if process is not None and process.poll() is not None:
-                error = f"The server process exited with code {process.returncode}"
+                error = f"Server process exited with code {process.returncode}"
                 await emit({
                     "type": "terminal_log",
                     "content": f"[Health Check] {error}\n",
@@ -132,7 +132,7 @@ async def _check_target_health(
                     await emit({
                         "type": "agent_thought",
                         "title": "Health Check Passed!",
-                        "content": f"The service responded with HTTP {response.status_code}.",
+                        "content": f"Service responded with HTTP {response.status_code}.",
                         "status": "completed",
                     })
                     return True
@@ -151,7 +151,7 @@ async def _check_target_health(
     await emit({
         "type": "agent_thought",
         "title": "Health Check Warning",
-        "content": f"The server did not respond at {target_url} after {max_retries} attempts.",
+        "content": f"Server did not respond at {target_url} after {max_retries} attempts.",
         "status": "completed",
     })
     return False
@@ -203,16 +203,16 @@ async def _start_target_service(
         except OSError:
             await emit({
                 "type": "agent_thought",
-                "title": "Application port is already in use",
-                "content": f"Port {port} is occupied. The new server was not started to avoid checking the health of a different service.",
+                "title": "Application port already in use",
+                "content": f"Port {port} is already occupied. The new server was not started so the health check doesn't accidentally measure another service.",
                 "status": "failed",
             })
             return False
 
     await emit({
         "type": "agent_thought",
-        "title": "Starting application",
-        "content": f"Running the approved command at {target_url}...",
+        "title": "Running application",
+        "content": f"Running the approved command on {target_url}...",
         "status": "in_progress",
     })
     process = await asyncio.to_thread(
@@ -236,7 +236,7 @@ async def _start_target_service(
         await emit({
             "type": "agent_thought",
             "title": "Application ready",
-            "content": f"The application is responding at {target_url}.",
+            "content": f"Application is responding at {target_url}.",
             "status": "completed",
         })
         return True
@@ -245,8 +245,8 @@ async def _start_target_service(
     await output_task
     await emit({
         "type": "agent_thought",
-        "title": "Application is not ready",
-        "content": f"The server did not respond at {target_url}. Check the command and logs above.",
+        "title": "Application not ready",
+        "content": f"Server is not responding at {target_url}. Check the command and logs above.",
         "status": "failed",
     })
     return False
@@ -302,7 +302,7 @@ def _infer_start_settings(plan: dict[str, Any], repo_path: Path) -> tuple[str | 
         start_command = f"npm run {start_script}"
 
     if start_command and not isinstance(start_command, str):
-        raise ValueError("Agent start_command must be a string or null.")
+        raise ValueError("start_command from the Agent must be a string or null.")
 
     if isinstance(port, str) and port.isdigit():
         port = int(port)
@@ -317,11 +317,11 @@ def _infer_start_settings(plan: dict[str, Any], repo_path: Path) -> tuple[str | 
             port = 3000
 
     if start_command and port is None:
-        raise ValueError("Server port could not be detected. The agent must provide a valid port.")
+        raise ValueError("Server port could not be detected. The Agent must provide a valid port.")
     if port is not None and (
         not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535
     ):
-        raise ValueError("The server port returned by the agent is invalid.")
+        raise ValueError("Server port from the Agent is invalid.")
     return start_command, port
 
 
@@ -350,19 +350,19 @@ async def run_agent(
         env_exists = (repo_path / ".env").is_file()
         await emit({
             "type": "agent_thought",
-            "title": ".env file available" if env_exists else "Review .env template",
+            "title": ".env available" if env_exists else ".env template needs review",
             "content": (
-                f"Found template(s): {', '.join(env_templates)}. File values were not read; .env was not created automatically."
+                f"Template {', '.join(env_templates)} found. File contents are not read; .env is not created automatically."
                 if not env_exists
-                else f"Found template(s): {', '.join(env_templates)} and an existing .env file. File values were not read."
+                else f"Template {', '.join(env_templates)} and .env found. File contents are not read."
             ),
             "status": "completed",
         })
     elif (repo_path / ".env").is_file():
         await emit({
             "type": "agent_thought",
-            "title": ".env file available",
-            "content": "An .env file was found. Its contents were not read or sent to the model.",
+            "title": ".env available",
+            "content": ".env file found. Its contents are not read or sent to the model.",
             "status": "completed",
         })
 
@@ -370,21 +370,21 @@ async def run_agent(
         await emit({
             "type": "agent_thought",
             "title": "No dependency manifest found",
-            "content": "This repository has no package.json, Python, or Docker manifest. No installation commands were run.",
+            "content": "This repository has no package.json, Python manifest, or Docker manifest. No install commands will be run.",
             "status": "completed",
         })
         return False
 
     plan = await call_agents("/v1/scan", {"files": repository_files})
     if not isinstance(plan, dict):
-        raise ValueError("The parser agent plan is not a JSON object.")
+        raise ValueError("The parser agent's plan is not a JSON object.")
 
     commands = plan.get("commands", [])
     if not isinstance(commands, list) or any(
         not isinstance(command, str) or not command.strip()
         for command in commands
     ):
-        raise ValueError("The commands returned by the parser are invalid.")
+        raise ValueError("The parser's command list is invalid.")
 
     start_command, port = _infer_start_settings(plan, repo_path)
     setup_commands: list[str] = []
@@ -392,7 +392,7 @@ async def run_agent(
         if not _command_matches_manifest(command, node_manifest, python_manifest, docker_manifest):
             await emit({
                 "type": "terminal_log",
-                "content": f"Command rejected: it does not match the manifest or would create a new manifest: {command}\n",
+                "content": f"Command rejected: doesn't match the manifest or creates a new manifest: {command}\n",
                 "isError": True,
             })
             continue
@@ -410,8 +410,8 @@ async def run_agent(
     async def report_denial(command: str) -> None:
         await emit({
             "type": "agent_thought",
-            "title": "Command not run",
-            "content": f"Approval was not granted for: {command}",
+            "title": "Command not executed",
+            "content": f"Approval was not given for: {command}",
             "status": "completed",
         })
 
@@ -419,7 +419,7 @@ async def run_agent(
         await emit({
             "type": "agent_thought",
             "title": "Environment check complete",
-            "content": "The project does not define any installation or server commands.",
+            "content": "No install commands or server were defined for this project.",
             "status": "completed",
         })
         return False
@@ -429,7 +429,7 @@ async def run_agent(
         succeeded = False
 
         for attempt in range(1, 4):
-            purpose = "Run setup command" if attempt == 1 else "Run repair command"
+            purpose = "Running setup command" if attempt == 1 else "Running fix command"
             if not await approve(current_command, purpose):
                 await report_denial(current_command)
                 return False
@@ -444,8 +444,8 @@ async def run_agent(
 
             await emit({
                 "type": "agent_thought",
-                "title": f"Failure detected for '{current_command}'",
-                "content": "An error was detected. Sending stderr logs to the Auto-Healing agent...",
+                "title": f"Detected failure on '{current_command}'",
+                "content": "Error detected. Sending stderr log to the Auto-Healing Agent...",
                 "status": "in_progress",
             })
             healing_result = await call_agents(
@@ -457,21 +457,21 @@ async def run_agent(
                 },
             )
             if not isinstance(healing_result, dict):
-                raise ValueError("The Auto-Healing agent response is not a JSON object.")
+                raise ValueError("The Auto-Healing Agent's response is not a JSON object.")
             current_command = healing_result.get("fix_command", "")
             if not isinstance(current_command, str) or not current_command.strip():
-                raise ValueError("The Auto-Healing agent did not provide a valid fix_command.")
+                raise ValueError("The Auto-Healing Agent did not provide a valid fix_command.")
             if not _command_matches_manifest(current_command, node_manifest, python_manifest, docker_manifest):
                 await emit({
                     "type": "terminal_log",
-                    "content": f"Repair command rejected: it does not match the manifest or would create a new manifest: {current_command}\n",
+                    "content": f"Fix command rejected: doesn't match the manifest or creates a new manifest: {current_command}\n",
                     "isError": True,
                 })
                 return False
 
             await emit({
                 "type": "agent_thought",
-                "title": f"Auto-Healing Strategy: {healing_result.get('thought_title', 'Repair')}",
+                "title": f"Auto-Healing Strategy: {healing_result.get('thought_title', 'Fix')}",
                 "content": healing_result.get("thought_detail", ""),
                 "status": "in_progress",
             })
@@ -479,8 +479,8 @@ async def run_agent(
         if not succeeded:
             await emit({
                 "type": "agent_thought",
-                "title": "Environment is not ready",
-                "content": f"The command failed after 3 attempts: {current_command}",
+                "title": "Environment not ready",
+                "content": f"Command failed after 3 attempts: {current_command}",
                 "status": "failed",
             })
             return False
@@ -489,21 +489,21 @@ async def run_agent(
         await emit({
             "type": "agent_thought",
             "title": "Environment setup complete",
-            "content": "Setup is complete; the project does not define an application server to start.",
+            "content": "Setup complete; no application server was defined to run.",
             "status": "completed",
         })
         return False
 
     if port is None:
-        raise ValueError("Application port was not found. The agent must select the port from the project configuration.")
+        raise ValueError("Application port not found. The Agent must choose a port that matches the project configuration.")
     if not _command_matches_manifest(start_command, node_manifest, python_manifest, docker_manifest):
         await emit({
             "type": "terminal_log",
-            "content": f"Start command rejected because it does not match the manifest: {start_command}\n",
+            "content": f"Start command rejected because it doesn't match the manifest: {start_command}\n",
             "isError": True,
         })
         return False
-    if not await approve(start_command, "Start application server"):
+    if not await approve(start_command, "Running application server"):
         await report_denial(start_command)
         return False
 
@@ -512,7 +512,7 @@ async def run_agent(
         await emit({
             "type": "agent_thought",
             "title": "Environment Ready!",
-            "content": f"The application is running and responding at http://127.0.0.1:{port}.",
+            "content": f"Application is running and responding at http://127.0.0.1:{port}.",
             "status": "completed",
         })
     return is_healthy
