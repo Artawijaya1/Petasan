@@ -102,7 +102,6 @@ async def _run_command(
 
     return result
 
-
 async def _check_target_health(
     target_url: str,
     emit: Callable[[dict[str, Any]], Awaitable[None]],
@@ -253,12 +252,13 @@ async def _start_target_service(
     return False
 
 
-async def cleanup_target_processes() -> None:
+async def cleanup_target_processes(cleanup_workspace: bool = True) -> None:
     for runtime in list(_ACTIVE_TARGETS.values()):
         await _stop_target_process(runtime.process)
         if not runtime.output_task.done():
             await runtime.output_task
-        shutil.rmtree(runtime.workspace, ignore_errors=True)
+        if cleanup_workspace:
+            shutil.rmtree(runtime.workspace, ignore_errors=True)
     _ACTIVE_TARGETS.clear()
     _RETAINED_WORKSPACES.clear()
 
