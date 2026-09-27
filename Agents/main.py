@@ -17,8 +17,8 @@ load_dotenv(AGENTS_DIRECTORY / ".env")
 
 if not os.environ.get("GEMINI_API_KEY"):
     raise RuntimeError(
-        f"GEMINI_API_KEY tidak ditemukan. Isi {AGENTS_DIRECTORY / '.env'} "
-        "atau set environment variable GEMINI_API_KEY."
+        f"GEMINI_API_KEY was not found. Set it in {AGENTS_DIRECTORY / '.env'} "
+        "or provide the GEMINI_API_KEY environment variable."
     )
 
 if str(AGENTS_DIRECTORY) not in sys.path:
@@ -51,7 +51,7 @@ async def require_service_token(
     if not expected_token:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AGENT_SERVICE_TOKEN belum dikonfigurasi.",
+            detail="AGENT_SERVICE_TOKEN is not configured.",
         )
 
     if credentials is None or not hmac.compare_digest(
@@ -60,7 +60,7 @@ async def require_service_token(
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Service token tidak valid.",
+            detail="The service token is invalid.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -88,6 +88,6 @@ async def heal(request: HealingRequest) -> dict[str, Any]:
     if result is None:
         raise HTTPException(
             status_code=502,
-            detail="Agents tidak dapat menghasilkan diagnosis perbaikan.",
+            detail="The Agents service could not generate a repair diagnosis.",
         )
     return result

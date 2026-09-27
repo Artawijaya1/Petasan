@@ -19,7 +19,7 @@ async def scan_repository(repo_path: str) -> dict:
     files_to_check = ['package.json', 'requirements.txt', 'Dockerfile', 'docker-compose.yml', '.env.example', 'README.md']
 
     def _read_files() -> dict:
-        """Baca file secara sinkron — dijalankan lewat asyncio.to_thread agar tidak memblokir event loop."""
+        """Read files synchronously in a worker thread to avoid blocking the event loop."""
         result = {}
         for file_name in files_to_check:
             full_path = os.path.join(repo_path, file_name)
@@ -28,7 +28,7 @@ async def scan_repository(repo_path: str) -> dict:
                     with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                         result[file_name] = f.read(2000)
                 except OSError as exc:
-                    logger.warning("Gagal membaca %s: %s", full_path, exc)
+                    logger.warning("Failed to read %s: %s", full_path, exc)
         return result
 
     found_files = await asyncio.to_thread(_read_files)
@@ -38,30 +38,32 @@ async def scan_repository(repo_path: str) -> dict:
 async def create_installation_plan(found_files: dict[str, str]) -> dict:
 
     prompt = f"""
-    Kamu adalah DevOps Architect Agent.
-    Berdasarkan manifest repository yang diberikan, buat rencana setup environment.
-    User harus menyetujui setiap command sebelum command dijalankan.
-    Jangan membuat manifest atau menyarankan npm init.
-    
-    File yang ditemukan:
+    You are a DevOps Architect Agent.
+    Based on the provided repository manifests, create an environment setup plan.
+    The user must approve every command before it is run.
+    Do not create manifests or suggest npm init.
+
+    All human-readable text in your response must be in English.
+
+    Discovered files:
     {json.dumps(found_files, indent=2)}
 
-    Format Output Harus Berupa JSON Valid:
+    Required output format (valid JSON):
     {{
             "commands": ["npm install"],
             "start_command": "npm run dev -- --host 0.0.0.0",
             "port": 5173
     }}
 
-        Aturan:
-        - Gunakan hanya package manager yang cocok dengan manifest yang ada.
-        - Jangan mengusulkan install jika manifest dependency terkait tidak ditemukan.
-        - Jangan menyalin atau membuat file .env; cukup laporkan jika template disebut.
-        - Pisahkan command install/build dari start_command yang menjaga server tetap hidup.
-        - start_command harus null jika manifest tidak mendefinisikan aplikasi yang bisa dijalankan.
-        - Port harus berasal dari konfigurasi project; Vite biasanya 5173 dan Next.js biasanya 3000.
+        Rules:
+        - Use only the package manager supported by the discovered manifests.
+        - Do not suggest installation if the relevant dependency manifest is missing.
+        - Do not copy or create .env files; only report if a template is present.
+        - Keep install/build commands separate from the long-running start_command.
+        - Set start_command to null if the manifest does not define a runnable application.
+        - Use the port from project configuration; Vite commonly uses 5173 and Next.js commonly uses 3000.
 
-    Balas HANYA dengan JSON valid, tanpa teks tambahan apapun.
+    Reply ONLY with valid JSON and no additional text.
     """
 
     try:
@@ -73,15 +75,15 @@ async def create_installation_plan(found_files: dict[str, str]) -> dict:
             ),
         )
     except Exception as exc:
-        logger.error("Gemini API error saat parsing repository: %s", exc)
-        raise RuntimeError(f"Gagal menghubungi Gemini API: {exc}") from exc
+        logger.error("Gemini API error while parsing repository: %s", exc)
+        raise RuntimeError(f"Could not reach the Gemini API: {exc}") from exc
 
     raw_content = response.text
     if not raw_content:
-        raise RuntimeError("Gemini API mengembalikan konten kosong.")
+        raise RuntimeError("The Gemini API returned empty content.")
 
     try:
         return json.loads(raw_content)
     except json.JSONDecodeError as exc:
-        logger.error("Respons Gemini bukan JSON valid: %s", raw_content[:500])
-        raise RuntimeError("Gemini API tidak mengembalikan JSON yang valid.") from exc
+        logger.error("Gemini response is not valid JSON: %s", raw_content[:500])
+        raise RuntimeError("The Gemini API did not return valid JSON.") from exc

@@ -18,13 +18,13 @@ GITHUB_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 def _normalize_github_url(value: Any) -> str:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError("Masukkan URL repository GitHub.")
+        raise ValueError("Enter a GitHub repository URL.")
 
     try:
         parsed = urlsplit(value.strip())
         port = parsed.port
     except ValueError as exc:
-        raise ValueError("URL GitHub tidak valid.") from exc
+        raise ValueError("Invalid GitHub URL.") from exc
 
     if (
         parsed.scheme != "https"
@@ -35,11 +35,11 @@ def _normalize_github_url(value: Any) -> str:
         or parsed.query
         or parsed.fragment
     ):
-        raise ValueError("Gunakan URL HTTPS repository dari github.com.")
+        raise ValueError("Use an HTTPS repository URL from github.com.")
 
     parts = parsed.path.strip("/").split("/")
     if len(parts) != 2:
-        raise ValueError("URL harus berbentuk https://github.com/owner/repository.")
+        raise ValueError("URL must use the format https://github.com/owner/repository.")
 
     owner, repository = parts
     if repository.endswith(".git"):
@@ -50,7 +50,7 @@ def _normalize_github_url(value: Any) -> str:
         or owner in {".", ".."}
         or repository in {".", ".."}
     ):
-        raise ValueError("Nama owner atau repository GitHub tidak valid.")
+        raise ValueError("GitHub owner or repository name is invalid.")
 
     return f"https://github.com/{owner}/{repository}.git"
 
@@ -68,9 +68,9 @@ def _run_git_clone(repo_url: str, destination: Path) -> tuple[int, str, str]:
             check=False,
         )
     except FileNotFoundError as exc:
-        raise RuntimeError("Git tidak ditemukan di host Backend.") from exc
+        raise RuntimeError("Git was not found on the Backend host.") from exc
     except subprocess.TimeoutExpired as exc:
-        raise RuntimeError("Clone repository melewati batas waktu 120 detik.") from exc
+        raise RuntimeError("Cloning the repository exceeded the 120-second timeout.") from exc
 
     return result.returncode, result.stdout.strip(), result.stderr.strip()
 
@@ -82,8 +82,8 @@ async def _clone_repository(
 ) -> None:
     await emit({
         "type": "agent_thought",
-        "title": "Mengunduh repository GitHub",
-        "content": f"Clone {repo_url} ke workspace sementara...",
+        "title": "Downloading GitHub repository",
+        "content": f"Cloning {repo_url} into a temporary workspace...",
         "status": "in_progress",
     })
 
@@ -97,20 +97,20 @@ async def _clone_repository(
     if stderr:
         await emit({"type": "terminal_log", "content": f"{stderr}\n", "isError": exit_code != 0})
     if exit_code != 0:
-        detail = stderr or stdout or "git clone gagal."
-        raise RuntimeError(f"Gagal clone repository: {detail[-1500:]}")
+        detail = stderr or stdout or "git clone failed."
+        raise RuntimeError(f"Failed to clone repository: {detail[-1500:]}")
 
     await emit({
         "type": "agent_thought",
-        "title": "Repository berhasil diunduh",
-        "content": "Repository siap dianalisis.",
+        "title": "Repository downloaded",
+        "content": "The repository is ready for analysis.",
         "status": "completed",
     })
 
 
 @router.get("/")
 def root() -> dict[str, str]:
-    return {"message": "Backend Petasan berhasil berjalan!"}
+    return {"message": "Petasan Backend is running!"}
 
 
 @router.websocket("/ws/agent")
@@ -123,7 +123,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         nonlocal failed, failure_detail
         if data.get("status") == "failed" or data.get("type") == "agent_error":
             failed = True
-            failure_detail = str(data.get("content", "Proses agent gagal."))
+            failure_detail = str(data.get("content", "The agent process failed."))
         await websocket.send_json(data)
 
     try:
@@ -134,7 +134,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             if not isinstance(data, dict) or data.get("action") != "start":
                 await emit({
                     "type": "agent_error",
-                    "content": "Pesan tidak valid. Kirim action 'start' untuk menjalankan agent.",
+                    "content": "Invalid message. Send the 'start' action to run the agent.",
                 })
                 await emit({
                     "type": "agent_complete",
@@ -182,7 +182,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                             return response["approved"]
                         await emit({
                             "type": "terminal_log",
-                            "content": "Respons approval tidak valid; gunakan tombol Setujui atau Tolak.\n",
+                            "content": "Invalid approval response; use the Approve or Reject button.\n",
                             "isError": True,
                         })
 
@@ -205,12 +205,12 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 "status": "failed" if failed else "completed",
                 "service_started": service_started,
                 "content": failure_detail or (
-                    "Proses gagal. Periksa detail error di atas."
+                    "The process failed. Check the error details above."
                     if failed
                     else (
-                        "Environment siap dan aplikasi berjalan."
+                        "The environment is ready and the application is running."
                         if service_started
-                        else "Pemeriksaan environment selesai; tidak ada aplikasi yang dijalankan."
+                        else "Environment checks are complete; no application was started."
                     )
                 ),
             })

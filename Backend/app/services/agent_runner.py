@@ -111,15 +111,15 @@ async def _check_target_health(
 ) -> bool:
     await emit({
         "type": "agent_thought",
-        "title": "Verifikasi Layanan (Health Check)",
-        "content": f"Memverifikasi status server lokal di {target_url}...",
+        "title": "Application Health Check",
+        "content": f"Checking the local server at {target_url}...",
         "status": "in_progress",
     })
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         for attempt in range(1, max_retries + 1):
             if process is not None and process.poll() is not None:
-                error = f"Proses server berhenti dengan exit code {process.returncode}"
+                error = f"The server process exited with code {process.returncode}"
                 await emit({
                     "type": "terminal_log",
                     "content": f"[Health Check] {error}\n",
@@ -132,7 +132,7 @@ async def _check_target_health(
                     await emit({
                         "type": "agent_thought",
                         "title": "Health Check Passed!",
-                        "content": f"Layanan merespons dengan HTTP {response.status_code}.",
+                        "content": f"The service responded with HTTP {response.status_code}.",
                         "status": "completed",
                     })
                     return True
@@ -142,7 +142,7 @@ async def _check_target_health(
 
             await emit({
                 "type": "terminal_log",
-                "content": f"[Health Check] Percobaan {attempt}/{max_retries}: {error}\n",
+                "content": f"[Health Check] Attempt {attempt}/{max_retries}: {error}\n",
                 "isError": False,
             })
             if attempt < max_retries:
@@ -151,7 +151,7 @@ async def _check_target_health(
     await emit({
         "type": "agent_thought",
         "title": "Health Check Warning",
-        "content": f"Server tidak merespons di {target_url} setelah {max_retries} percobaan.",
+        "content": f"The server did not respond at {target_url} after {max_retries} attempts.",
         "status": "completed",
     })
     return False
@@ -203,16 +203,16 @@ async def _start_target_service(
         except OSError:
             await emit({
                 "type": "agent_thought",
-                "title": "Port aplikasi sudah digunakan",
-                "content": f"Port {port} sudah ditempati. Server baru tidak dijalankan agar health check tidak salah mengukur service lain.",
+                "title": "Application port is already in use",
+                "content": f"Port {port} is occupied. The new server was not started to avoid checking the health of a different service.",
                 "status": "failed",
             })
             return False
 
     await emit({
         "type": "agent_thought",
-        "title": "Menjalankan aplikasi",
-        "content": f"Menjalankan command yang disetujui di {target_url}...",
+        "title": "Starting application",
+        "content": f"Running the approved command at {target_url}...",
         "status": "in_progress",
     })
     process = await asyncio.to_thread(
@@ -235,8 +235,8 @@ async def _start_target_service(
         _RETAINED_WORKSPACES.add(workspace)
         await emit({
             "type": "agent_thought",
-            "title": "Aplikasi siap",
-            "content": f"Aplikasi merespons di {target_url}.",
+            "title": "Application ready",
+            "content": f"The application is responding at {target_url}.",
             "status": "completed",
         })
         return True
@@ -245,8 +245,8 @@ async def _start_target_service(
     await output_task
     await emit({
         "type": "agent_thought",
-        "title": "Aplikasi belum siap",
-        "content": f"Server tidak merespons di {target_url}. Periksa command dan log di atas.",
+        "title": "Application is not ready",
+        "content": f"The server did not respond at {target_url}. Check the command and logs above.",
         "status": "failed",
     })
     return False
@@ -302,7 +302,7 @@ def _infer_start_settings(plan: dict[str, Any], repo_path: Path) -> tuple[str | 
         start_command = f"npm run {start_script}"
 
     if start_command and not isinstance(start_command, str):
-        raise ValueError("start_command dari Agent harus berupa string atau null.")
+        raise ValueError("Agent start_command must be a string or null.")
 
     if isinstance(port, str) and port.isdigit():
         port = int(port)
@@ -317,11 +317,11 @@ def _infer_start_settings(plan: dict[str, Any], repo_path: Path) -> tuple[str | 
             port = 3000
 
     if start_command and port is None:
-        raise ValueError("Port server tidak terdeteksi. Agent harus memberikan port yang benar.")
+        raise ValueError("Server port could not be detected. The agent must provide a valid port.")
     if port is not None and (
         not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535
     ):
-        raise ValueError("Port server dari Agent tidak valid.")
+        raise ValueError("The server port returned by the agent is invalid.")
     return start_command, port
 
 
@@ -332,8 +332,8 @@ async def run_agent(
 ) -> bool:
     await emit({
         "type": "agent_thought",
-        "title": "Memeriksa environment repository",
-        "content": "Memeriksa manifest dependency sebelum merencanakan instalasi...",
+        "title": "Checking repository environment",
+        "content": "Checking dependency manifests before planning installation...",
         "status": "in_progress",
     })
 
@@ -350,41 +350,41 @@ async def run_agent(
         env_exists = (repo_path / ".env").is_file()
         await emit({
             "type": "agent_thought",
-            "title": ".env tersedia" if env_exists else "Template .env perlu ditinjau",
+            "title": ".env file available" if env_exists else "Review .env template",
             "content": (
-                f"Template {', '.join(env_templates)} ditemukan. Nilai file tidak dibaca; .env tidak dibuat otomatis."
+                f"Found template(s): {', '.join(env_templates)}. File values were not read; .env was not created automatically."
                 if not env_exists
-                else f"Template {', '.join(env_templates)} dan .env ditemukan. Nilai file tidak dibaca."
+                else f"Found template(s): {', '.join(env_templates)} and an existing .env file. File values were not read."
             ),
             "status": "completed",
         })
     elif (repo_path / ".env").is_file():
         await emit({
             "type": "agent_thought",
-            "title": ".env tersedia",
-            "content": "File .env ditemukan. Isinya tidak dibaca atau dikirim ke model.",
+            "title": ".env file available",
+            "content": "An .env file was found. Its contents were not read or sent to the model.",
             "status": "completed",
         })
 
     if not (node_manifest or python_manifest or docker_manifest):
         await emit({
             "type": "agent_thought",
-            "title": "Tidak ada manifest dependency",
-            "content": "Repository ini tidak punya package.json, manifest Python, atau manifest Docker. Tidak ada command install yang dijalankan.",
+            "title": "No dependency manifest found",
+            "content": "This repository has no package.json, Python, or Docker manifest. No installation commands were run.",
             "status": "completed",
         })
         return False
 
     plan = await call_agents("/v1/scan", {"files": repository_files})
     if not isinstance(plan, dict):
-        raise ValueError("Rencana agent dari parser bukan objek JSON.")
+        raise ValueError("The parser agent plan is not a JSON object.")
 
     commands = plan.get("commands", [])
     if not isinstance(commands, list) or any(
         not isinstance(command, str) or not command.strip()
         for command in commands
     ):
-        raise ValueError("Daftar commands dari parser tidak valid.")
+        raise ValueError("The commands returned by the parser are invalid.")
 
     start_command, port = _infer_start_settings(plan, repo_path)
     setup_commands: list[str] = []
@@ -392,7 +392,7 @@ async def run_agent(
         if not _command_matches_manifest(command, node_manifest, python_manifest, docker_manifest):
             await emit({
                 "type": "terminal_log",
-                "content": f"Command ditolak: tidak cocok dengan manifest atau membuat manifest baru: {command}\n",
+                "content": f"Command rejected: it does not match the manifest or would create a new manifest: {command}\n",
                 "isError": True,
             })
             continue
@@ -410,16 +410,16 @@ async def run_agent(
     async def report_denial(command: str) -> None:
         await emit({
             "type": "agent_thought",
-            "title": "Command tidak dijalankan",
-            "content": f"Persetujuan tidak diberikan untuk: {command}",
+            "title": "Command not run",
+            "content": f"Approval was not granted for: {command}",
             "status": "completed",
         })
 
     if not setup_commands and start_command is None:
         await emit({
             "type": "agent_thought",
-            "title": "Pemeriksaan environment selesai",
-            "content": "Tidak ada command instalasi atau server yang didefinisikan project.",
+            "title": "Environment check complete",
+            "content": "The project does not define any installation or server commands.",
             "status": "completed",
         })
         return False
@@ -429,7 +429,7 @@ async def run_agent(
         succeeded = False
 
         for attempt in range(1, 4):
-            purpose = "Menjalankan command setup" if attempt == 1 else "Menjalankan command perbaikan"
+            purpose = "Run setup command" if attempt == 1 else "Run repair command"
             if not await approve(current_command, purpose):
                 await report_denial(current_command)
                 return False
@@ -444,8 +444,8 @@ async def run_agent(
 
             await emit({
                 "type": "agent_thought",
-                "title": f"Mendeteksi Failure pada '{current_command}'",
-                "content": "Error terdeteksi. Mengirim stderr log ke Auto-Healing Agent...",
+                "title": f"Failure detected for '{current_command}'",
+                "content": "An error was detected. Sending stderr logs to the Auto-Healing agent...",
                 "status": "in_progress",
             })
             healing_result = await call_agents(
@@ -457,21 +457,21 @@ async def run_agent(
                 },
             )
             if not isinstance(healing_result, dict):
-                raise ValueError("Respons Auto-Healing Agent bukan objek JSON.")
+                raise ValueError("The Auto-Healing agent response is not a JSON object.")
             current_command = healing_result.get("fix_command", "")
             if not isinstance(current_command, str) or not current_command.strip():
-                raise ValueError("Auto-Healing Agent tidak memberikan fix_command yang valid.")
+                raise ValueError("The Auto-Healing agent did not provide a valid fix_command.")
             if not _command_matches_manifest(current_command, node_manifest, python_manifest, docker_manifest):
                 await emit({
                     "type": "terminal_log",
-                    "content": f"Command perbaikan ditolak: tidak cocok dengan manifest atau membuat manifest baru: {current_command}\n",
+                    "content": f"Repair command rejected: it does not match the manifest or would create a new manifest: {current_command}\n",
                     "isError": True,
                 })
                 return False
 
             await emit({
                 "type": "agent_thought",
-                "title": f"Auto-Healing Strategy: {healing_result.get('thought_title', 'Perbaikan')}",
+                "title": f"Auto-Healing Strategy: {healing_result.get('thought_title', 'Repair')}",
                 "content": healing_result.get("thought_detail", ""),
                 "status": "in_progress",
             })
@@ -479,8 +479,8 @@ async def run_agent(
         if not succeeded:
             await emit({
                 "type": "agent_thought",
-                "title": "Environment belum siap",
-                "content": f"Perintah gagal setelah 3 percobaan: {current_command}",
+                "title": "Environment is not ready",
+                "content": f"The command failed after 3 attempts: {current_command}",
                 "status": "failed",
             })
             return False
@@ -488,22 +488,22 @@ async def run_agent(
     if start_command is None:
         await emit({
             "type": "agent_thought",
-            "title": "Environment setup selesai",
-            "content": "Setup selesai; tidak ada server aplikasi yang didefinisikan untuk dijalankan.",
+            "title": "Environment setup complete",
+            "content": "Setup is complete; the project does not define an application server to start.",
             "status": "completed",
         })
         return False
 
     if port is None:
-        raise ValueError("Port aplikasi tidak ditemukan. Agent harus memilih port sesuai konfigurasi project.")
+        raise ValueError("Application port was not found. The agent must select the port from the project configuration.")
     if not _command_matches_manifest(start_command, node_manifest, python_manifest, docker_manifest):
         await emit({
             "type": "terminal_log",
-            "content": f"Start command ditolak karena tidak cocok dengan manifest: {start_command}\n",
+            "content": f"Start command rejected because it does not match the manifest: {start_command}\n",
             "isError": True,
         })
         return False
-    if not await approve(start_command, "Menjalankan server aplikasi"):
+    if not await approve(start_command, "Start application server"):
         await report_denial(start_command)
         return False
 
@@ -512,7 +512,7 @@ async def run_agent(
         await emit({
             "type": "agent_thought",
             "title": "Environment Ready!",
-            "content": f"Aplikasi berjalan dan merespons di http://127.0.0.1:{port}.",
+            "content": f"The application is running and responding at http://127.0.0.1:{port}.",
             "status": "completed",
         })
     return is_healthy

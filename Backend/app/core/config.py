@@ -8,5 +8,5 @@ load_dotenv(BACKEND_DIRECTORY / ".env")
 
 AGENTS_API_URL = os.environ.get(
     "AGENTS_API_URL",
-    "http://127.0.0.1:8001",
+    "jubilant-spirit-production-47e4.up.railway.app",
 ).rstrip("/")

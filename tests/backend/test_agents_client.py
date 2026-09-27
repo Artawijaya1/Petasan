@@ -121,7 +121,7 @@ class TestCallAgents:
         )
 
         with patch("app.services.agents_client.httpx.AsyncClient", return_value=mock_client):
-            with pytest.raises(RuntimeError, match="Tidak dapat menghubungi"):
+            with pytest.raises(RuntimeError, match="Could not reach the Agents API"):
                 await call_agents("/v1/scan", {})
 
     @pytest.mark.asyncio

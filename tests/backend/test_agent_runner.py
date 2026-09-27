@@ -135,7 +135,7 @@ class TestStartSettings:
                 )
 
         assert started is False
-        assert any(event.get("title") == "Port aplikasi sudah digunakan" for event in events)
+        assert any(event.get("title") == "Application port is already in use" for event in events)
 
 
 class TestDynamicTargetService:
@@ -345,7 +345,7 @@ class TestRunAgentHealingLoop:
 
         scan.assert_not_awaited()
         command.assert_not_awaited()
-        assert any(event.get("title") == "Tidak ada manifest dependency" for event in events)
+        assert any(event.get("title") == "No dependency manifest found" for event in events)
 
     @pytest.mark.asyncio
     async def test_denied_setup_command_is_not_run(self) -> None:

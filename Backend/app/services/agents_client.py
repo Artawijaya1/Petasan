@@ -9,7 +9,7 @@ from ..core.config import AGENTS_API_URL
 async def call_agents(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
     service_token = os.environ.get("AGENT_SERVICE_TOKEN")
     if not service_token:
-        raise RuntimeError("AGENT_SERVICE_TOKEN belum dikonfigurasi di Backend.")
+        raise RuntimeError("AGENT_SERVICE_TOKEN is not configured in the Backend.")
 
     try:
         async with httpx.AsyncClient(timeout=90.0) as client:
@@ -28,7 +28,7 @@ async def call_agents(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
             f"Agents API mengembalikan HTTP {exc.response.status_code}: {detail}"
         ) from exc
     except httpx.RequestError as exc:
-        raise RuntimeError(f"Tidak dapat menghubungi Agents API: {exc}") from exc
+        raise RuntimeError(f"Could not reach the Agents API: {exc}") from exc
 
     result = response.json()
     if not isinstance(result, dict):

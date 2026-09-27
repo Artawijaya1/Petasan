@@ -75,8 +75,8 @@ class TestCreateInstallationPlan:
 
         assert "requirements.txt" in captured[0]
         assert "fastapi" in captured[0]
-        assert "Jangan membuat manifest" in captured[0]
-        assert "jangan membuat manifest" in captured[0].lower()
+        assert "Do not create manifests" in captured[0]
+        assert "do not create manifests" in captured[0].lower()
 
     @pytest.mark.asyncio
     async def test_raises_runtime_error_on_api_exception(self) -> None:
@@ -87,7 +87,7 @@ class TestCreateInstallationPlan:
             mock_client.aio.models.generate_content = AsyncMock(
                 side_effect=Exception("connection error")
             )
-            with pytest.raises(RuntimeError, match="Gagal menghubungi Gemini API"):
+            with pytest.raises(RuntimeError, match="Could not reach the Gemini API"):
                 await create_installation_plan({"package.json": "{}"})
 
     @pytest.mark.asyncio
@@ -99,7 +99,7 @@ class TestCreateInstallationPlan:
 
         with patch("agents.parser_agent._client") as mock_client:
             mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
-            with pytest.raises(RuntimeError, match="konten kosong"):
+            with pytest.raises(RuntimeError, match="empty content"):
                 await create_installation_plan({"package.json": "{}"})
 
     @pytest.mark.asyncio
